@@ -496,6 +496,21 @@ export const DataService = {
     return null;
   },
 
+  async deleteUser(id: string) {
+    if (await checkMongoConnection()) {
+      return await User.findByIdAndDelete(id).select("-passwordHash").lean();
+    }
+    const store = readStore();
+    const idx = store.users.findIndex((u) => u._id === id);
+    if (idx !== -1) {
+      const deleted = store.users.splice(idx, 1)[0];
+      writeStore(store);
+      const { passwordHash, ...safe } = deleted;
+      return safe;
+    }
+    return null;
+  },
+
   // --- PRODUCTS ---
   async getProducts(params?: { search?: string; category?: string; activeOnly?: boolean }) {
     if (await checkMongoConnection()) {

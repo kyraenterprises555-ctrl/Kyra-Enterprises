@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
   Edit2,
+  Trash2,
   RefreshCw,
   KeyRound,
   Lock,
@@ -24,7 +25,8 @@ export default function UsersManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modals
+  // Modals & User State
+  const [currentSessionUser, setCurrentSessionUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -33,6 +35,11 @@ export default function UsersManagementPage() {
   const [confirmStaffPassword, setConfirmStaffPassword] = useState("");
   const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  // Delete Staff Modal
+  const [isDeleteStaffOpen, setIsDeleteStaffOpen] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<any>(null);
+  const [deletingStaff, setDeletingStaff] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -48,9 +55,15 @@ export default function UsersManagementPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/users");
-      const data = await res.json();
+      const [uRes, meRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch("/api/auth/me"),
+      ]);
+      const data = await uRes.json();
+      const meData = await meRes.json();
+
       if (data.success) setUsers(data.users);
+      if (meData.success && meData.user) setCurrentSessionUser(meData.user);
     } catch {
       toast.error("Failed to load users");
     } finally {
@@ -151,6 +164,35 @@ export default function UsersManagementPage() {
       toast.error(msg);
     } finally {
       setUpdatingPassword(false);
+    }
+  };
+
+  const handleDeleteStaffConfirm = async () => {
+    if (!staffToDelete) return;
+
+    if (currentSessionUser && currentSessionUser.userId === staffToDelete._id) {
+      toast.error("You cannot delete your own active admin account");
+      return;
+    }
+
+    try {
+      setDeletingStaff(true);
+      const res = await fetch(`/api/users/${staffToDelete._id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete user");
+
+      toast.success(data.message || `Staff account "${staffToDelete.name}" deleted successfully`);
+      setIsDeleteStaffOpen(false);
+      setStaffToDelete(null);
+      fetchUsers();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error deleting user";
+      toast.error(msg);
+    } finally {
+      setDeletingStaff(false);
     }
   };
 
@@ -320,7 +362,7 @@ export default function UsersManagementPage() {
                           title="Change Password"
                         >
                           <KeyRound className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Change Password</span>
+                          <span className="hidden sm:inline">Password</span>
                         </button>
                         <button
                           onClick={() => openEdit(u)}
@@ -329,6 +371,21 @@ export default function UsersManagementPage() {
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">Edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (currentSessionUser && (currentSessionUser.userId === u._id || currentSessionUser.email === u.email)) {
+                              toast.error("You cannot delete your own active admin account");
+                              return;
+                            }
+                            setStaffToDelete(u);
+                            setIsDeleteStaffOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded border border-red-200 text-xs font-medium transition-colors"
+                          title="Delete Staff Account"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Delete</span>
                         </button>
                       </div>
                     </td>
@@ -442,24 +499,48 @@ export default function UsersManagementPage() {
                 </div>
               )}
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false);
-                    setIsEditOpen(false);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50"
-                >
-                  {submitting ? "Saving..." : isOpen ? "Create User" : "Update User"}
-                </button>
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between gap-2.5">
+                {isEditOpen && selectedUser ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const u = selectedUser;
+                      if (currentSessionUser && (currentSessionUser.userId === u._id || currentSessionUser.email === u.email)) {
+                        toast.error("You cannot delete your own active admin account");
+                        return;
+                      }
+                      setIsEditOpen(false);
+                      setStaffToDelete(u);
+                      setIsDeleteStaffOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-colors mr-auto"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Account</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsEditOpen(false);
+                    }}
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50"
+                  >
+                    {submitting ? "Saving..." : isOpen ? "Create User" : "Update User"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -545,6 +626,63 @@ export default function UsersManagementPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Staff Confirmation Modal */}
+      {isDeleteStaffOpen && staffToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Delete Staff Account</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Revoke system credentials and user permissions
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 space-y-1.5 text-xs">
+              <div className="font-bold text-slate-900 text-sm">{staffToDelete.name}</div>
+              <div className="text-slate-500 font-mono text-[11px]">{staffToDelete.email}</div>
+              <div className="pt-1 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-800">
+                  Role: {staffToDelete.role?.replace("_", " ")}
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  {staffToDelete.phone || "No phone registered"}
+                </span>
+              </div>
+              <div className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2.5 leading-relaxed">
+                <strong>Warning:</strong> Deleting this staff account will permanently remove their access to Kayra Enterprises. Historical invoices and audit records created by this user will remain preserved with their name for legal compliance.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteStaffOpen(false);
+                  setStaffToDelete(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteStaffConfirm}
+                disabled={deletingStaff}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{deletingStaff ? "Deleting..." : "Yes, Delete Account"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

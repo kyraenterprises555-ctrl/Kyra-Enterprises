@@ -44,3 +44,46 @@ export async function PUT(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || currentUser.role !== "admin") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    // Prevent self-deletion of currently logged-in admin
+    if (currentUser.userId === id) {
+      return NextResponse.json(
+        { error: "You cannot delete your own active admin account" },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await DataService.deleteUser(id);
+    if (!deleted) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    await recordAuditLog({
+      action: "USER_DELETED",
+      entity: "User",
+      entityId: id,
+      performedBy: { userId: currentUser.userId, userName: currentUser.name, role: currentUser.role },
+      details: { name: deleted.name, email: deleted.email, role: deleted.role },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Staff account "${deleted.name}" (${deleted.email}) deleted successfully`,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to delete user";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
