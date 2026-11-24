@@ -104,7 +104,7 @@ export function Sidebar({ userRole = "admin", businessName = "Kayra Enterprises"
   ];
 
   return (
-    <aside className="w-64 bg-[#0e1e32] text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-800 selection:bg-emerald-500 selection:text-white">
+    <aside className="no-print print:hidden w-64 bg-[#0e1e32] text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-800 selection:bg-emerald-500 selection:text-white">
       {/* Brand Header */}
       <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-800 bg-[#091422]">
         <div className="w-9 h-9 rounded-lg overflow-hidden bg-slate-800 text-white flex items-center justify-center font-bold text-lg shadow-sm border border-slate-700">

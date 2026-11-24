@@ -34,7 +34,7 @@ export function Header({ user }: HeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="no-print print:hidden h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       <div className="flex items-center gap-3">
         <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
         <span className="text-xs font-medium text-slate-500">

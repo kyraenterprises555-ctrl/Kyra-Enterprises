@@ -201,7 +201,7 @@ export default function InvoiceDetailsPage() {
   return (
     <div className="space-y-6">
       {/* Top Action Bar (Hidden in Print) */}
-      <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+      <div className="no-print print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3">
           <Link
             href="/invoices"
@@ -282,7 +282,7 @@ export default function InvoiceDetailsPage() {
 
       {/* Cancelled Banner if applicable */}
       {isCancelled && (
-        <div className="no-print p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3">
+        <div className="no-print print:hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
           <div className="text-xs">
             <span className="font-bold">This invoice has been CANCELLED</span>
@@ -295,7 +295,7 @@ export default function InvoiceDetailsPage() {
       )}
 
       {/* Exact Tax Invoice Representation matching sample bill */}
-      <div className="bg-white border-2 border-black rounded-lg p-6 sm:p-10 shadow-sm max-w-4xl mx-auto text-black print:border-none print:p-0 print:shadow-none">
+      <div id="printable-invoice" className="printable-invoice bg-white border-2 border-black rounded-lg p-6 sm:p-10 shadow-sm max-w-4xl mx-auto text-black print:border-none print:p-0 print:shadow-none print:w-full print:max-w-none print:m-0">
         {/* Title */}
         <div className="text-center pb-2 border-b-2 border-black">
           <h2 className="text-base font-bold tracking-wide">Tax Invoice</h2>
@@ -532,7 +532,7 @@ export default function InvoiceDetailsPage() {
 
       {/* Record Payment Modal */}
       {isPaymentOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+        <div className="no-print print:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
             <h2 className="text-base font-bold text-slate-900">Record Invoice Payment</h2>
             <p className="text-xs text-slate-500 mt-0.5 mb-4">
@@ -624,7 +624,7 @@ export default function InvoiceDetailsPage() {
 
       {/* Cancel Invoice Modal */}
       {isCancelOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+        <div className="no-print print:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
             <h2 className="text-base font-bold text-red-600">Cancel Tax Invoice</h2>
             <p className="text-xs text-slate-500 mt-0.5 mb-4">
