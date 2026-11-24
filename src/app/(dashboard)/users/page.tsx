@@ -12,6 +12,10 @@ import {
   XCircle,
   Edit2,
   RefreshCw,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
@@ -20,9 +24,16 @@ export default function UsersManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal
+  // Modals
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordTargetUser, setPasswordTargetUser] = useState<any>(null);
+  const [newStaffPassword, setNewStaffPassword] = useState("");
+  const [confirmStaffPassword, setConfirmStaffPassword] = useState("");
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -101,6 +112,45 @@ export default function UsersManagementPage() {
       toast.error(msg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAdminResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordTargetUser) return;
+
+    if (newStaffPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (newStaffPassword !== confirmStaffPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    try {
+      setUpdatingPassword(true);
+      const res = await fetch(`/api/users/${passwordTargetUser._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newStaffPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update password");
+
+      toast.success(`Password for "${passwordTargetUser.name}" updated successfully!`);
+      setIsPasswordModalOpen(false);
+      setPasswordTargetUser(null);
+      setNewStaffPassword("");
+      setConfirmStaffPassword("");
+      fetchUsers();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error changing password";
+      toast.error(msg);
+    } finally {
+      setUpdatingPassword(false);
     }
   };
 
@@ -258,13 +308,29 @@ export default function UsersManagementPage() {
                       {u.lastLogin ? formatDateTime(u.lastLogin) : "Never"}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => openEdit(u)}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                        title="Edit Permissions"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => {
+                            setPasswordTargetUser(u);
+                            setNewStaffPassword("");
+                            setConfirmStaffPassword("");
+                            setIsPasswordModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-200 text-xs font-medium transition-colors"
+                          title="Change Password"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Change Password</span>
+                        </button>
+                        <button
+                          onClick={() => openEdit(u)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded border border-slate-200 text-xs font-medium transition-colors"
+                          title="Edit User Profile & Role"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -393,6 +459,89 @@ export default function UsersManagementPage() {
                   className="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50"
                 >
                   {submitting ? "Saving..." : isOpen ? "Create User" : "Update User"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Change Staff Password Modal */}
+      {isPasswordModalOpen && passwordTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Change Staff Password</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Update login password for <strong className="text-slate-800">{passwordTargetUser.name}</strong> ({passwordTargetUser.email})
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAdminResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  New Password * (Minimum 6 characters)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showStaffPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={newStaffPassword}
+                    onChange={(e) => setNewStaffPassword(e.target.value)}
+                    placeholder="Enter new staff password"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-3 pr-9 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowStaffPassword(!showStaffPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showStaffPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Confirm New Password *
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmStaffPassword}
+                  onChange={(e) => setConfirmStaffPassword(e.target.value)}
+                  placeholder="Re-enter new staff password"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPasswordModalOpen(false);
+                    setPasswordTargetUser(null);
+                    setNewStaffPassword("");
+                    setConfirmStaffPassword("");
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingPassword}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50 shadow-sm"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{updatingPassword ? "Updating..." : "Update Staff Password"}</span>
                 </button>
               </div>
             </form>

@@ -456,6 +456,14 @@ export const DataService = {
     return safe;
   },
 
+  async getUserWithPassword(id: string) {
+    if (await checkMongoConnection()) {
+      return await User.findById(id).lean();
+    }
+    const store = readStore();
+    return store.users.find((u) => u._id === id) || null;
+  },
+
   async createUser(data: any) {
     if (await checkMongoConnection()) {
       const u = await User.create(data);
