@@ -38,28 +38,28 @@ function getInitialStore(): LocalStore {
   return {
     settings: {
       _id: "settings_1",
-      businessName: "Kayra Enterprises",
+      businessName: "KYRA ENTERPRISES",
       logoUrl: "/logo.jpeg",
-      gstin: "07AAACK1234F1Z5",
-      address: "Plot No. 42, Commercial Belt, Okhla Industrial Area Phase-III",
-      city: "New Delhi",
-      state: "Delhi",
-      stateCode: "07",
-      pincode: "110020",
-      phone: "+91 98112 34567",
-      email: "billing@kayraenterprises.com",
+      gstin: "10CPLPK1520H1ZF",
+      address: "BASAITHA MADHUBANI",
+      city: "Madhubani",
+      state: "Bihar",
+      stateCode: "10",
+      pincode: "847223",
+      phone: "+91 98765 43210",
+      email: "kyraenterprises555@gmail.com",
       bankDetails: {
-        bankName: "HDFC Bank Ltd.",
-        accountHolder: "Kayra Enterprises",
-        accountNumber: "50200088997766",
-        ifscCode: "HDFC0000123",
-        branch: "Okhla Phase-III, New Delhi",
+        bankName: "Union Bank of India",
+        accountHolder: "KYRA ENTERPRISES",
+        accountNumber: "195721010000113",
+        ifscCode: "UBIN0919578",
+        branch: "BENIPATTI BRANCH",
       },
-      upiId: "kayraenterprises@okhdfcbank",
-      invoicePrefix: "KE/2026-27/",
-      currentInvoiceSequence: 1001,
+      upiId: "10cplpk1520h1zf@unionbank",
+      invoicePrefix: "26-27/",
+      currentInvoiceSequence: 10,
       invoiceTerms:
-        "1. Goods once sold will not be accepted back or exchanged without original invoice.\n2. Interest @ 18% per annum will be levied on overdue payments.\n3. Certified that all particulars are true and correct. Disputes subject to Delhi jurisdiction.",
+        "1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.\n2. Payments due within 5 days of Invoice date.\n3. In case of a product being defective or having a manufacturing defect, the primary responsibility for repairing or replacing it lies with the company.\n4. Burnt and broken will not be warrented, please check while purchasing.",
       updatedAt: new Date().toISOString(),
     },
     users: [
@@ -1354,6 +1354,27 @@ export const DataService = {
   },
 
   // --- AUDIT LOGS ---
+  async createAuditLog(data: any) {
+    if (await checkMongoConnection()) {
+      try {
+        const log = await AuditLog.create(data);
+        return log.toObject();
+      } catch {
+        // fallback
+      }
+    }
+    const store = readStore();
+    const newLog = {
+      _id: `audit_${Date.now()}`,
+      ...data,
+      createdAt: new Date().toISOString(),
+    };
+    store.auditLogs.unshift(newLog);
+    if (store.auditLogs.length > 200) store.auditLogs.pop();
+    writeStore(store);
+    return newLog;
+  },
+
   async getAuditLogs(limit = 100) {
     if (await checkMongoConnection()) {
       return await AuditLog.find({}).sort({ createdAt: -1 }).limit(limit).lean();

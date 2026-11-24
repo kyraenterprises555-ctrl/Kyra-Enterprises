@@ -1,5 +1,4 @@
-import connectToDatabase from "./mongodb";
-import AuditLog from "@/models/AuditLog";
+import { DataService } from "./db-store";
 
 export interface LogAuditParams {
   action: string;
@@ -16,8 +15,7 @@ export interface LogAuditParams {
 
 export async function recordAuditLog(params: LogAuditParams): Promise<void> {
   try {
-    await connectToDatabase();
-    await AuditLog.create({
+    await DataService.createAuditLog({
       action: params.action,
       entity: params.entity,
       entityId: params.entityId,
@@ -29,8 +27,7 @@ export async function recordAuditLog(params: LogAuditParams): Promise<void> {
       },
       ipAddress: params.ipAddress || "",
     });
-  } catch (error) {
-    // Non-blocking error logging
-    console.error("Failed to record audit log:", error);
+  } catch {
+    // Graceful silent fallback
   }
 }

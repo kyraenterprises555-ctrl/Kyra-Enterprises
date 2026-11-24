@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import connectToDatabase from "@/lib/mongodb";
-import BusinessSettings from "@/models/BusinessSettings";
+import { DataService } from "@/lib/db-store";
 
 export default async function DashboardLayout({
   children,
@@ -18,13 +17,12 @@ export default async function DashboardLayout({
 
   let businessName = "Kayra Enterprises";
   try {
-    await connectToDatabase();
-    const settings = await BusinessSettings.findOne({}).lean();
-    if (settings && typeof settings === "object" && "businessName" in settings) {
-      businessName = (settings as { businessName: string }).businessName || businessName;
+    const settings = await DataService.getSettings();
+    if (settings && settings.businessName) {
+      businessName = settings.businessName;
     }
   } catch {
-    // Fallback to default name if db is loading
+    // Fallback to default name
   }
 
   return (
