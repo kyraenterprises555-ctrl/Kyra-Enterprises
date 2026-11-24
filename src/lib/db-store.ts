@@ -39,7 +39,7 @@ function getInitialStore(): LocalStore {
     settings: {
       _id: "settings_1",
       businessName: "Kayra Enterprises",
-      logoUrl: "",
+      logoUrl: "/logo.jpeg",
       gstin: "07AAACK1234F1Z5",
       address: "Plot No. 42, Commercial Belt, Okhla Industrial Area Phase-III",
       city: "New Delhi",

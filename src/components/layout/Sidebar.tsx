@@ -107,8 +107,15 @@ export function Sidebar({ userRole = "admin", businessName = "Kayra Enterprises"
     <aside className="w-64 bg-[#0e1e32] text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-800 selection:bg-emerald-500 selection:text-white">
       {/* Brand Header */}
       <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-800 bg-[#091422]">
-        <div className="w-9 h-9 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-          <Building2 className="w-5 h-5" />
+        <div className="w-9 h-9 rounded-lg overflow-hidden bg-slate-800 text-white flex items-center justify-center font-bold text-lg shadow-sm border border-slate-700">
+          <img
+            src="/logo.jpeg"
+            alt={businessName}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
         </div>
         <div className="overflow-hidden">
           <h1 className="font-semibold text-white text-sm truncate tracking-wide">{businessName}</h1>
