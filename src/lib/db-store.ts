@@ -594,19 +594,53 @@ export const DataService = {
     return null;
   },
 
-  async softDeleteProduct(id: string) {
+  async deleteProduct(id: string) {
     if (await checkMongoConnection()) {
-      return await Product.findByIdAndUpdate(id, { isDeleted: true, isActive: false }, { new: true }).lean();
+      const prod = await Product.findById(id).lean();
+      if (!prod) return null;
+
+      // Check if product has appeared in any invoice
+      const invoiceCount = await Invoice.countDocuments({
+        "items.productId": id,
+      });
+
+      if (invoiceCount > 0) {
+        // Safe soft-delete to preserve legal financial records
+        const updated = await Product.findByIdAndUpdate(
+          id,
+          { isDeleted: true, isActive: false },
+          { new: true }
+        ).lean();
+        return { product: updated, permanent: false };
+      } else {
+        await Product.findByIdAndDelete(id);
+        return { product: prod, permanent: true };
+      }
     }
+
     const store = readStore();
     const idx = store.products.findIndex((p) => p._id === id);
-    if (idx !== -1) {
+    if (idx === -1) return null;
+
+    const prod = store.products[idx];
+    const hasInvoices = store.invoices.some((inv) =>
+      inv.items.some((it) => it.productId === id)
+    );
+
+    if (hasInvoices) {
       store.products[idx].isDeleted = true;
       store.products[idx].isActive = false;
       writeStore(store);
-      return store.products[idx];
+      return { product: store.products[idx], permanent: false };
+    } else {
+      store.products.splice(idx, 1);
+      writeStore(store);
+      return { product: prod, permanent: true };
     }
-    return null;
+  },
+
+  async softDeleteProduct(id: string) {
+    return (await this.deleteProduct(id))?.product || null;
   },
 
   // --- CATEGORIES ---

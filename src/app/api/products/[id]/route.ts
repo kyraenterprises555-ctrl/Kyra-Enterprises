@@ -64,21 +64,26 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    // IMPORTANT: Soft deletion to preserve historical invoice integrity
-    const deleted = await DataService.softDeleteProduct(id);
-    if (!deleted) {
+    const res = await DataService.deleteProduct(id);
+    if (!res) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     await recordAuditLog({
-      action: "PRODUCT_SOFT_DELETED",
+      action: res.permanent ? "PRODUCT_PERMANENTLY_DELETED" : "PRODUCT_SOFT_DELETED",
       entity: "Product",
       entityId: id,
       performedBy: { userId: user.userId, userName: user.name, role: user.role },
-      details: { name: deleted.name, sku: deleted.sku },
+      details: { name: res.product.name, sku: res.product.sku, permanent: res.permanent },
     });
 
-    return NextResponse.json({ success: true, message: "Product safely deactivated" });
+    return NextResponse.json({
+      success: true,
+      message: res.permanent
+        ? "Product deleted permanently"
+        : "Product deleted from catalog (archived for historical invoices)",
+      product: res.product,
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to delete product";
     return NextResponse.json({ error: message }, { status: 500 });
