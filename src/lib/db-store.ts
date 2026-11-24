@@ -13,6 +13,7 @@ import Purchase, { IPurchase } from "@/models/Purchase";
 import StockMovement, { IStockMovement } from "@/models/StockMovement";
 import AuditLog, { IAuditLog } from "@/models/AuditLog";
 import { calculateInvoiceTaxes, numberToWordsINR } from "./gst";
+import initialData from "./initial-data.json";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
@@ -30,356 +31,48 @@ interface LocalStore {
   auditLogs: any[];
 }
 
-function getInitialStore(): LocalStore {
-  const adminHash = bcrypt.hashSync("Admin@123", 10);
-  const managerHash = bcrypt.hashSync("Manager@123", 10);
-  const staffHash = bcrypt.hashSync("Staff@123", 10);
+let memoryStore: LocalStore | null = null;
 
-  return {
-    settings: {
-      _id: "settings_1",
-      businessName: "KYRA ENTERPRISES",
-      logoUrl: "/logo.jpeg",
-      gstin: "10CPLPK1520H1ZF",
-      address: "BASAITHA MADHUBANI",
-      city: "Madhubani",
-      state: "Bihar",
-      stateCode: "10",
-      pincode: "847223",
-      phone: "+91 98765 43210",
-      email: "kyraenterprises555@gmail.com",
-      bankDetails: {
-        bankName: "Union Bank of India",
-        accountHolder: "KYRA ENTERPRISES",
-        accountNumber: "195721010000113",
-        ifscCode: "UBIN0919578",
-        branch: "BENIPATTI BRANCH",
-      },
-      upiId: "10cplpk1520h1zf@unionbank",
-      invoicePrefix: "26-27/",
-      currentInvoiceSequence: 10,
-      invoiceTerms:
-        "1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.\n2. Payments due within 5 days of Invoice date.\n3. In case of a product being defective or having a manufacturing defect, the primary responsibility for repairing or replacing it lies with the company.\n4. Burnt and broken will not be warrented, please check while purchasing.",
-      updatedAt: new Date().toISOString(),
-    },
-    users: [
-      {
-        _id: "user_admin",
-        name: "Rajesh Sharma (Admin)",
-        email: "admin@kayra.com",
-        passwordHash: adminHash,
-        role: "admin",
-        phone: "+91 98112 34567",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "user_manager",
-        name: "Pooja Verma (Manager)",
-        email: "manager@kayra.com",
-        passwordHash: managerHash,
-        role: "manager",
-        phone: "+91 98112 88899",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "user_staff",
-        name: "Amit Kumar (Billing Staff)",
-        email: "staff@kayra.com",
-        passwordHash: staffHash,
-        role: "billing_staff",
-        phone: "+91 98112 55544",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    categories: [
-      { _id: "cat_1", name: "Electronics & Accessories", description: "Displays, peripherals and adapters", isActive: true },
-      { _id: "cat_2", name: "Computer Hardware", description: "Internal PC parts, SSDs, RAM", isActive: true },
-      { _id: "cat_3", name: "Office Supplies", description: "Toner cartridges, copier paper", isActive: true },
-    ],
-    products: [
-      {
-        _id: "prod_1",
-        name: "Dell 24-inch FHD IPS Monitor",
-        sku: "KE-MON-24",
-        barcode: "8901234567890",
-        categoryId: "cat_1",
-        categoryName: "Electronics & Accessories",
-        description: "1080p 75Hz IPS Display with HDMI & DisplayPort",
-        uom: "PCS",
-        sellingPrice: 11500,
-        purchasePrice: 9200,
-        availableQuantity: 24,
-        minStockAlert: 5,
-        gstRate: 18,
-        hsnCode: "8528",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_2",
-        name: "Logitech MX Master 3S Wireless Mouse",
-        sku: "KE-LOGI-MX3S",
-        barcode: "8901234567891",
-        categoryId: "cat_1",
-        categoryName: "Electronics & Accessories",
-        description: "Ergonomic quiet click Bluetooth mouse with 8K DPI sensor",
-        uom: "PCS",
-        sellingPrice: 7999,
-        purchasePrice: 6200,
-        availableQuantity: 35,
-        minStockAlert: 8,
-        gstRate: 18,
-        hsnCode: "8471",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_3",
-        name: "Samsung 980 Pro 1TB NVMe M.2 SSD",
-        sku: "KE-SSD-SAM-1TB",
-        barcode: "8901234567892",
-        categoryId: "cat_2",
-        categoryName: "Computer Hardware",
-        description: "PCIe 4.0 NVMe SSD with read speeds up to 7,000 MB/s",
-        uom: "PCS",
-        sellingPrice: 9400,
-        purchasePrice: 7600,
-        availableQuantity: 18,
-        minStockAlert: 5,
-        gstRate: 18,
-        hsnCode: "8471",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_4",
-        name: "Crucial 16GB DDR5 4800MHz Desktop RAM",
-        sku: "KE-RAM-CRU-16",
-        barcode: "8901234567893",
-        categoryId: "cat_2",
-        categoryName: "Computer Hardware",
-        description: "High performance dual-channel ready desktop memory module",
-        uom: "PCS",
-        sellingPrice: 4200,
-        purchasePrice: 3300,
-        availableQuantity: 40,
-        minStockAlert: 10,
-        gstRate: 18,
-        hsnCode: "8473",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_5",
-        name: "HP LaserJet 108w Monochrome Printer",
-        sku: "KE-PRN-HP-108W",
-        barcode: "8901234567894",
-        categoryId: "cat_1",
-        categoryName: "Electronics & Accessories",
-        description: "Compact wireless laser printer with fast crisp printing",
-        uom: "PCS",
-        sellingPrice: 13800,
-        purchasePrice: 11200,
-        availableQuantity: 12,
-        minStockAlert: 3,
-        gstRate: 18,
-        hsnCode: "8443",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_6",
-        name: "HP 110A Black Original Laser Toner Cartridge",
-        sku: "KE-TNR-HP-110A",
-        barcode: "8901234567895",
-        categoryId: "cat_3",
-        categoryName: "Office Supplies",
-        description: "Original toner cartridge with 1500 page yield",
-        uom: "PCS",
-        sellingPrice: 3600,
-        purchasePrice: 2850,
-        availableQuantity: 50,
-        minStockAlert: 10,
-        gstRate: 18,
-        hsnCode: "8443",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_7",
-        name: "Bilt Matrix Copier Paper A4 75 GSM (Box of 5 Reams)",
-        sku: "KE-PPR-A4-75",
-        barcode: "8901234567896",
-        categoryId: "cat_3",
-        categoryName: "Office Supplies",
-        description: "Premium high brightness multi-purpose copier paper",
-        uom: "BOX",
-        sellingPrice: 1450,
-        purchasePrice: 1150,
-        availableQuantity: 60,
-        minStockAlert: 15,
-        gstRate: 12,
-        hsnCode: "4802",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "prod_8",
-        name: "APC Back-UPS 600VA / 360W Battery Backup",
-        sku: "KE-UPS-APC-600",
-        barcode: "8901234567897",
-        categoryId: "cat_1",
-        categoryName: "Electronics & Accessories",
-        description: "Line-interactive UPS with battery surge protection",
-        uom: "PCS",
-        sellingPrice: 3850,
-        purchasePrice: 3000,
-        availableQuantity: 15,
-        minStockAlert: 4,
-        gstRate: 18,
-        hsnCode: "8504",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    customers: [
-      {
-        _id: "cust_1",
-        name: "Sharma Infotech Solutions Pvt Ltd",
-        businessName: "Sharma Infotech",
-        phone: "+91 98223 34455",
-        email: "procurement@sharmainfotech.com",
-        billingAddress: "402, Skyline Towers, Sector 62",
-        shippingAddress: "402, Skyline Towers, Sector 62, Noida, UP - 201309",
-        gstin: "09AABCS1234E1Z8", // Uttar Pradesh (Inter-state supply test)
-        state: "Uttar Pradesh",
-        stateCode: "09",
-        customerType: "registered",
-        balance: 0,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "cust_2",
-        name: "Apex Global Traders",
-        businessName: "Apex Traders",
-        phone: "+91 99110 99887",
-        email: "accounts@apextraders.in",
-        billingAddress: "Shop 12, Nehru Place Market",
-        shippingAddress: "Shop 12, Nehru Place Market, New Delhi - 110019",
-        gstin: "07AAHCA9988C1ZK", // Delhi (Intra-state supply test)
-        state: "Delhi",
-        stateCode: "07",
-        customerType: "registered",
-        balance: 0,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "cust_3",
-        name: "Anand Kumar",
-        businessName: "",
-        phone: "+91 98711 22334",
-        email: "anand.kumar@gmail.com",
-        billingAddress: "B-24, Lajpat Nagar-II, New Delhi - 110024",
-        shippingAddress: "B-24, Lajpat Nagar-II, New Delhi - 110024",
-        gstin: "",
-        state: "Delhi",
-        stateCode: "07",
-        customerType: "unregistered",
-        balance: 0,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    purchases: [],
-    stockMovements: [
-      {
-        _id: "mov_1",
-        productId: "prod_1",
-        productName: "Dell 24-inch FHD IPS Monitor",
-        sku: "KE-MON-24",
-        type: "purchase",
-        quantity: 24,
-        previousQuantity: 0,
-        newQuantity: 24,
-        referenceType: "purchase",
-        referenceNumber: "INITIAL-STOCK",
-        reason: "Initial warehouse intake",
-        unitCost: 9200,
-        performedBy: { userId: "user_admin", userName: "Rajesh Sharma (Admin)" },
-        createdAt: new Date().toISOString(),
-      },
-      {
-        _id: "mov_2",
-        productId: "prod_2",
-        productName: "Logitech MX Master 3S Wireless Mouse",
-        sku: "KE-LOGI-MX3S",
-        type: "purchase",
-        quantity: 35,
-        previousQuantity: 0,
-        newQuantity: 35,
-        referenceType: "purchase",
-        referenceNumber: "INITIAL-STOCK",
-        reason: "Initial warehouse intake",
-        unitCost: 6200,
-        performedBy: { userId: "user_admin", userName: "Rajesh Sharma (Admin)" },
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    invoices: [],
-    payments: [],
-    auditLogs: [
-      {
-        _id: "audit_1",
-        action: "SYSTEM_INITIALIZED",
-        entity: "System",
-        performedBy: { userName: "System", role: "admin" },
-        details: { message: "System initialized with enterprise defaults" },
-        createdAt: new Date().toISOString(),
-      },
-    ],
-  };
+function getInitialStore(): LocalStore {
+  return JSON.parse(JSON.stringify(initialData)) as LocalStore;
 }
 
 function readStore(): LocalStore {
+  if (memoryStore) return memoryStore;
   try {
     if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+      try {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      } catch {}
     }
     if (!fs.existsSync(DATA_FILE)) {
       const initial = getInitialStore();
-      fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2));
+      try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2));
+      } catch {}
+      memoryStore = initial;
       return initial;
     }
     const data = fs.readFileSync(DATA_FILE, "utf-8");
-    return JSON.parse(data);
+    memoryStore = JSON.parse(data);
+    return memoryStore!;
   } catch (err) {
-    console.error("Error reading store, resetting:", err);
+    console.error("Error reading store, fallback to initial data:", err);
     const initial = getInitialStore();
+    memoryStore = initial;
     return initial;
   }
 }
 
 function writeStore(store: LocalStore): void {
+  memoryStore = store;
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
   } catch (err) {
-    console.error("Error writing store:", err);
+    console.warn("Storage notice: Filesystem write skipped in serverless environment:", err);
   }
 }
 

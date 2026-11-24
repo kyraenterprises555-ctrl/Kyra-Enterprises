@@ -1,0 +1,1691 @@
+{
+  "settings": {
+    "_id": "settings_1",
+    "businessName": "KYRA ENTERPRISES",
+    "logoUrl": "/logo.jpeg",
+    "gstin": "10CPLPK1520H1ZF",
+    "address": "BASAITHA MADHUBANI",
+    "city": "Madhubani",
+    "state": "Bihar",
+    "stateCode": "10",
+    "pincode": "847223",
+    "phone": "+91 98765 43210",
+    "email": "kyraenterprises555@gmail.com",
+    "bankDetails": {
+      "bankName": "Union Bank of India",
+      "accountHolder": "KYRA ENTERPRISES",
+      "accountNumber": "195721010000113",
+      "ifscCode": "UBIN0919578",
+      "branch": "BENIPATTI BRANCH"
+    },
+    "upiId": "10cplpk1520h1zf@unionbank",
+    "invoicePrefix": "26-27/",
+    "currentInvoiceSequence": 10,
+    "invoiceTerms": "1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.\n2. Payments due within 5 days of Invoice date.\n3. In case of a product being defective or having a manufacturing defect, the primary responsibility for repairing or replacing it lies with the company.\n4. Burnt and broken will not be warrented, please check while purchasing.",
+    "updatedAt": "2026-11-24T06:50:27.065Z"
+  },
+  "users": [
+    {
+      "_id": "user_admin",
+      "name": "Vivek Kumar Jha",
+      "email": "admin@kayra.com",
+      "passwordHash": "$2a$10$KtfRYeBxOq8KRcQLaB85yehLCKLTOa79f.Wzf00FlwtYmz4S7pVmG",
+      "role": "admin",
+      "phone": "+917393931555",
+      "isActive": true,
+      "createdAt": "2026-11-24T08:13:55.561Z"
+    },
+    {
+      "_id": "user_manager",
+      "name": "Store Manager",
+      "email": "manager@kayra.com",
+      "passwordHash": "$2a$10$rhnpqnjCN6M1K8KLLD6zSOzwLnkF1Ji1X1GfObIJoMO4hdHUwrAxq",
+      "role": "manager",
+      "phone": "+91 98765 43211",
+      "isActive": true,
+      "createdAt": "2026-11-24T08:13:55.569Z"
+    },
+    {
+      "_id": "user_staff",
+      "name": "Billing Staff",
+      "email": "staff@kayra.com",
+      "passwordHash": "$2a$10$LCcSSHIM/WA2BJJx.t1PSeQVTSCcv7DaGlwsM.QuZtUCsMdC9Sspm",
+      "role": "billing_staff",
+      "phone": "+91 98765 43212",
+      "isActive": true,
+      "createdAt": "2026-11-24T08:13:55.569Z"
+    }
+  ],
+  "categories": [
+    {
+      "_id": "cat_1",
+      "name": "Home Appliances - Irons",
+      "description": "Dry and Steam Irons",
+      "isActive": true
+    },
+    {
+      "_id": "cat_2",
+      "name": "Fans & Ventilation",
+      "description": "Ceiling, Table, Pedestal, and Exhaust Fans",
+      "isActive": true
+    },
+    {
+      "_id": "cat_3",
+      "name": "Kitchen Appliances - Kettles",
+      "description": "Electric Kettles and Mixers",
+      "isActive": true
+    },
+    {
+      "_id": "cat_4",
+      "name": "Water Heaters & Coolers",
+      "description": "Geysers and Air Coolers",
+      "isActive": true
+    }
+  ],
+  "products": [
+    {
+      "_id": "prod_1",
+      "name": "NEW POPULAR 1000 Dry Iron (440302",
+      "sku": "KE-PRD-001",
+      "barcode": "8901000000002",
+      "categoryName": "Home Appliances - Irons",
+      "description": "NEW POPULAR 1000 Dry Iron (440302",
+      "uom": "PCS",
+      "sellingPrice": 436.52,
+      "purchasePrice": 349.22,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145110",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.064Z",
+      "updatedAt": "2026-11-24T06:50:27.064Z"
+    },
+    {
+      "_id": "prod_2",
+      "name": "Bajaj Dx 16 Dry Iron  (440323)",
+      "sku": "KE-440323",
+      "barcode": "8901000000003",
+      "categoryName": "Home Appliances - Irons",
+      "description": "Bajaj Dx 16 Dry Iron  (440323)",
+      "uom": "PCS",
+      "sellingPrice": 906.62,
+      "purchasePrice": 725.3,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85164000",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.064Z",
+      "updatedAt": "2026-11-24T06:50:27.064Z"
+    },
+    {
+      "_id": "prod_3",
+      "name": "Bajaj Majesty Dhx 9 Heavy Weight Iron(440154)",
+      "sku": "KE-440154",
+      "barcode": "8901000000004",
+      "categoryName": "Home Appliances - Irons",
+      "description": "Bajaj Majesty Dhx 9 Heavy Weight Iron(440154)",
+      "uom": "PCS",
+      "sellingPrice": 863.45,
+      "purchasePrice": 690.76,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85164000",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_4",
+      "name": "Bajaj Dx 7 Neo Dry Iron(440304)",
+      "sku": "KE-440304",
+      "barcode": "8901000000005",
+      "categoryName": "Home Appliances - Irons",
+      "description": "Bajaj Dx 7 Neo Dry Iron(440304)",
+      "uom": "PCS",
+      "sellingPrice": 607.63,
+      "purchasePrice": 486.1,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85164000",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_5",
+      "name": "Bajaj Majesty Canvas Brown(440306)",
+      "sku": "KE-440306",
+      "barcode": "8901000000006",
+      "categoryName": "Electrical Appliances",
+      "description": "Bajaj Majesty Canvas Brown(440306)",
+      "uom": "PCS",
+      "sellingPrice": 655.58,
+      "purchasePrice": 524.46,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85164000",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_6",
+      "name": "Instabreeze 230 mm Blue Multipurpose Fan(252059)",
+      "sku": "KE-252059",
+      "barcode": "8901000000007",
+      "categoryName": "Fans & Ventilation",
+      "description": "Instabreeze 230 mm Blue Multipurpose Fan(252059)",
+      "uom": "PCS",
+      "sellingPrice": 1312.13,
+      "purchasePrice": 1049.7,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145110",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_7",
+      "name": "ESTEEM 400MM ICY BLUE & WHITE TABLE(251319)",
+      "sku": "KE-251319",
+      "barcode": "8901000000008",
+      "categoryName": "Electrical Appliances",
+      "description": "ESTEEM 400MM ICY BLUE & WHITE TABLE(251319)",
+      "uom": "PCS",
+      "sellingPrice": 1517.08,
+      "purchasePrice": 1213.66,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145110",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_8",
+      "name": "ESTEEM 400MM TURBO BLUE & WHITE TABLE(251319)",
+      "sku": "KE-251319",
+      "barcode": "8901000000009",
+      "categoryName": "Electrical Appliances",
+      "description": "ESTEEM 400MM TURBO BLUE & WHITE TABLE(251319)",
+      "uom": "PCS",
+      "sellingPrice": 2245.76,
+      "purchasePrice": 1796.61,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145110",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_9",
+      "name": "Chetak HS 9EES 900 MM Dark Brown CF(251413EE)",
+      "sku": "KE-251413EE",
+      "barcode": "8901000000010",
+      "categoryName": "Electrical Appliances",
+      "description": "Chetak HS 9EES 900 MM Dark Brown CF(251413EE)",
+      "uom": "PCS",
+      "sellingPrice": 1098.73,
+      "purchasePrice": 878.98,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145120",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_10",
+      "name": "Bahar 225 mm Metallic Grey Dom Ex Fan(070000)",
+      "sku": "KE-070000",
+      "barcode": "8901000000011",
+      "categoryName": "Fans & Ventilation",
+      "description": "Bahar 225 mm Metallic Grey Dom Ex Fan(070000)",
+      "uom": "PCS",
+      "sellingPrice": 963.7,
+      "purchasePrice": 770.96,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145990",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_11",
+      "name": "Bahar HS 150 mm Metakkic Grey Dom Ex Fan(70512)",
+      "sku": "KE-70512",
+      "barcode": "8901000000012",
+      "categoryName": "Fans & Ventilation",
+      "description": "Bahar HS 150 mm Metakkic Grey Dom Ex Fan(70512)",
+      "uom": "PCS",
+      "sellingPrice": 976.72,
+      "purchasePrice": 781.38,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145990",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_12",
+      "name": "Bahar 300 mm Metallic Grey Exhaust Fan(070001)",
+      "sku": "KE-070001",
+      "barcode": "8901000000013",
+      "categoryName": "Fans & Ventilation",
+      "description": "Bahar 300 mm Metallic Grey Exhaust Fan(070001)",
+      "uom": "PCS",
+      "sellingPrice": 1136.08,
+      "purchasePrice": 908.86,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145990",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_13",
+      "name": "Maxima 6ee 600 mm White CF(250274EE)",
+      "sku": "KE-250274EE",
+      "barcode": "8901000000014",
+      "categoryName": "Electrical Appliances",
+      "description": "Maxima 6ee 600 mm White CF(250274EE)",
+      "uom": "PCS",
+      "sellingPrice": 1216.45,
+      "purchasePrice": 973.16,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145120",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_14",
+      "name": "KTX 1.5 L dlx Kettle ( 670106 )",
+      "sku": "KE-670106",
+      "barcode": "8901000000015",
+      "categoryName": "Kitchen Appliances - Kettles",
+      "description": "KTX 1.5 L dlx Kettle ( 670106 )",
+      "uom": "PCS",
+      "sellingPrice": 588.98,
+      "purchasePrice": 471.18,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85167100",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_15",
+      "name": "KTX 1.8 L dlx Kettle ( 670107 )",
+      "sku": "KE-670107",
+      "barcode": "8901000000016",
+      "categoryName": "Kitchen Appliances - Kettles",
+      "description": "KTX 1.8 L dlx Kettle ( 670107 )",
+      "uom": "PCS",
+      "sellingPrice": 635.59,
+      "purchasePrice": 508.47,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85167100",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_16",
+      "name": "Astor 15L (150968)",
+      "sku": "KE-150968",
+      "barcode": "8901000000017",
+      "categoryName": "Electrical Appliances",
+      "description": "Astor 15L (150968)",
+      "uom": "PCS",
+      "sellingPrice": 5932.2,
+      "purchasePrice": 4745.76,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85161000",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_17",
+      "name": "Bajaj Air Cooler 55 ltr.",
+      "sku": "KE-PRD-017",
+      "barcode": "8901000000018",
+      "categoryName": "Electrical Appliances",
+      "description": "Bajaj Air Cooler 55 ltr.",
+      "uom": "PCS",
+      "sellingPrice": 5084.75,
+      "purchasePrice": 4067.8,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85164000",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_18",
+      "name": "Bajaj Ninja Series Notch 500W (410600)",
+      "sku": "KE-410600",
+      "barcode": "8901000000019",
+      "categoryName": "Electrical Appliances",
+      "description": "Bajaj Ninja Series Notch 500W (410600)",
+      "uom": "PCS",
+      "sellingPrice": 2118.64,
+      "purchasePrice": 1694.91,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "85094090",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "prod_19",
+      "name": "Sabse Tezz Farrata F1 500 mm Pedestal Fan (252154)",
+      "sku": "KE-252154",
+      "barcode": "8901000000020",
+      "categoryName": "Fans & Ventilation",
+      "description": "Sabse Tezz Farrata F1 500 mm Pedestal Fan (252154)",
+      "uom": "PCS",
+      "sellingPrice": 3050.85,
+      "purchasePrice": 2440.68,
+      "availableQuantity": 25,
+      "minStockAlert": 5,
+      "gstRate": 18,
+      "hsnCode": "84145130",
+      "isActive": true,
+      "isDeleted": false,
+      "createdAt": "2026-11-24T06:50:27.065Z",
+      "updatedAt": "2026-11-24T06:50:27.065Z"
+    }
+  ],
+  "customers": [
+    {
+      "_id": "cust_dev_electric",
+      "name": "DEV ELECTRIC",
+      "businessName": "DEV ELECTRIC",
+      "phone": "+91 98012 34567",
+      "email": "develectric@gmail.com",
+      "billingAddress": "BENIPATTI MADHUBANI",
+      "shippingAddress": "BENIPATTI MADHUBANI",
+      "gstin": "",
+      "state": "Bihar",
+      "stateCode": "10",
+      "customerType": "unregistered",
+      "balance": 0,
+      "isActive": true,
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "cust_apex",
+      "name": "Apex Global Traders",
+      "businessName": "Apex Traders",
+      "phone": "+91 99110 99887",
+      "email": "accounts@apextraders.in",
+      "billingAddress": "Shop 12, Main Market, Patna, Bihar - 800001",
+      "shippingAddress": "Shop 12, Main Market, Patna, Bihar - 800001",
+      "gstin": "10AAHCA9988C1ZK",
+      "state": "Bihar",
+      "stateCode": "10",
+      "customerType": "registered",
+      "balance": 0,
+      "isActive": true,
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "cust_sharma_up",
+      "name": "Sharma Infotech Solutions Pvt Ltd",
+      "businessName": "Sharma Infotech",
+      "phone": "+91 98223 34455",
+      "email": "procurement@sharmainfotech.com",
+      "billingAddress": "402, Skyline Towers, Sector 62, Noida, UP - 201309",
+      "shippingAddress": "402, Skyline Towers, Sector 62, Noida, UP - 201309",
+      "gstin": "09AABCS1234E1Z8",
+      "state": "Uttar Pradesh",
+      "stateCode": "09",
+      "customerType": "registered",
+      "balance": 0,
+      "isActive": true,
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    }
+  ],
+  "purchases": [],
+  "stockMovements": [
+    {
+      "_id": "mov_1795504875998",
+      "productId": "prod_1795504875998",
+      "productName": "Temporary Test Iron To Delete",
+      "sku": "TEST-DEL-001",
+      "type": "purchase",
+      "quantity": 5,
+      "previousQuantity": 0,
+      "newQuantity": 5,
+      "referenceType": "manual",
+      "reason": "Initial product stock on creation",
+      "unitCost": 350,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin"
+      },
+      "createdAt": "2026-11-24T07:21:15.998Z"
+    },
+    {
+      "_id": "mov_1",
+      "productId": "prod_1",
+      "productName": "NEW POPULAR 1000 Dry Iron (440302",
+      "sku": "KE-PRD-001",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 349.22,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.064Z"
+    },
+    {
+      "_id": "mov_2",
+      "productId": "prod_2",
+      "productName": "Bajaj Dx 16 Dry Iron  (440323)",
+      "sku": "KE-440323",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 725.3,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.064Z"
+    },
+    {
+      "_id": "mov_3",
+      "productId": "prod_3",
+      "productName": "Bajaj Majesty Dhx 9 Heavy Weight Iron(440154)",
+      "sku": "KE-440154",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 690.76,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_4",
+      "productId": "prod_4",
+      "productName": "Bajaj Dx 7 Neo Dry Iron(440304)",
+      "sku": "KE-440304",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 486.1,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_5",
+      "productId": "prod_5",
+      "productName": "Bajaj Majesty Canvas Brown(440306)",
+      "sku": "KE-440306",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 524.46,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_6",
+      "productId": "prod_6",
+      "productName": "Instabreeze 230 mm Blue Multipurpose Fan(252059)",
+      "sku": "KE-252059",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 1049.7,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_7",
+      "productId": "prod_7",
+      "productName": "ESTEEM 400MM ICY BLUE & WHITE TABLE(251319)",
+      "sku": "KE-251319",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 1213.66,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_8",
+      "productId": "prod_8",
+      "productName": "ESTEEM 400MM TURBO BLUE & WHITE TABLE(251319)",
+      "sku": "KE-251319",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 1796.61,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_9",
+      "productId": "prod_9",
+      "productName": "Chetak HS 9EES 900 MM Dark Brown CF(251413EE)",
+      "sku": "KE-251413EE",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 878.98,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_10",
+      "productId": "prod_10",
+      "productName": "Bahar 225 mm Metallic Grey Dom Ex Fan(070000)",
+      "sku": "KE-070000",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 770.96,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_11",
+      "productId": "prod_11",
+      "productName": "Bahar HS 150 mm Metakkic Grey Dom Ex Fan(70512)",
+      "sku": "KE-70512",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 781.38,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_12",
+      "productId": "prod_12",
+      "productName": "Bahar 300 mm Metallic Grey Exhaust Fan(070001)",
+      "sku": "KE-070001",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 908.86,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_13",
+      "productId": "prod_13",
+      "productName": "Maxima 6ee 600 mm White CF(250274EE)",
+      "sku": "KE-250274EE",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 973.16,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_14",
+      "productId": "prod_14",
+      "productName": "KTX 1.5 L dlx Kettle ( 670106 )",
+      "sku": "KE-670106",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 471.18,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_15",
+      "productId": "prod_15",
+      "productName": "KTX 1.8 L dlx Kettle ( 670107 )",
+      "sku": "KE-670107",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 508.47,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_16",
+      "productId": "prod_16",
+      "productName": "Astor 15L (150968)",
+      "sku": "KE-150968",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 4745.76,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_17",
+      "productId": "prod_17",
+      "productName": "Bajaj Air Cooler 55 ltr.",
+      "sku": "KE-PRD-017",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 4067.8,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_18",
+      "productId": "prod_18",
+      "productName": "Bajaj Ninja Series Notch 500W (410600)",
+      "sku": "KE-410600",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 1694.91,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    },
+    {
+      "_id": "mov_19",
+      "productId": "prod_19",
+      "productName": "Sabse Tezz Farrata F1 500 mm Pedestal Fan (252154)",
+      "sku": "KE-252154",
+      "type": "purchase",
+      "quantity": 25,
+      "previousQuantity": 0,
+      "newQuantity": 25,
+      "referenceType": "purchase",
+      "referenceNumber": "INITIAL-STOCK",
+      "reason": "Initial warehouse intake from vendor",
+      "unitCost": 2440.68,
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-11-24T06:50:27.065Z"
+    }
+  ],
+  "invoices": [
+    {
+      "_id": "inv_sample_09",
+      "invoiceNumber": "26-27/09",
+      "invoiceDate": "2026-10-31T00:00:00.000Z",
+      "customerId": "cust_dev_electric",
+      "customer": {
+        "name": "DEV ELECTRIC",
+        "businessName": "DEV ELECTRIC",
+        "phone": "+91 98012 34567",
+        "email": "develectric@gmail.com",
+        "billingAddress": "BENIPATTI MADHUBANI",
+        "shippingAddress": "BENIPATTI MADHUBANI",
+        "gstin": "",
+        "state": "Bihar",
+        "stateCode": "10",
+        "customerType": "unregistered"
+      },
+      "seller": {
+        "businessName": "KYRA ENTERPRISES",
+        "logoUrl": "/logo.jpeg",
+        "gstin": "10CPLPK1520H1ZF",
+        "address": "BASAITHA MADHUBANI",
+        "city": "Madhubani",
+        "state": "Bihar",
+        "stateCode": "10",
+        "pincode": "847223",
+        "phone": "+91 98765 43210",
+        "email": "kyraenterprises555@gmail.com",
+        "bankDetails": {
+          "bankName": "Union Bank of India",
+          "accountHolder": "KYRA ENTERPRISES",
+          "accountNumber": "195721010000113",
+          "ifscCode": "UBIN0919578",
+          "branch": "BENIPATTI BRANCH"
+        },
+        "upiId": "10cplpk1520h1zf@unionbank"
+      },
+      "items": [
+        {
+          "productId": "prod_sample_1",
+          "productName": "Bajaj Notch 500W French Blue M (410651)",
+          "sku": "KE-410651",
+          "hsnCode": "85167990",
+          "uom": "PCS",
+          "rate": 1762.5,
+          "purchasePrice": 1400,
+          "quantity": 2,
+          "discount": 0,
+          "taxableAmount": 3525,
+          "gstRate": 18,
+          "cgstRate": 9,
+          "cgstAmount": 317.25,
+          "sgstRate": 9,
+          "sgstAmount": 317.25,
+          "igstRate": 0,
+          "igstAmount": 0,
+          "totalTax": 634.5,
+          "totalAmount": 4159.5
+        },
+        {
+          "productId": "prod_sample_2",
+          "productName": "KTX 1.5 L dlx Kettle (670106)",
+          "sku": "KE-670106",
+          "hsnCode": "85167100",
+          "uom": "PCS",
+          "rate": 610.15,
+          "purchasePrice": 480,
+          "quantity": 1,
+          "discount": 0,
+          "taxableAmount": 610.15,
+          "gstRate": 18,
+          "cgstRate": 9,
+          "cgstAmount": 54.91,
+          "sgstRate": 9,
+          "sgstAmount": 54.91,
+          "igstRate": 0,
+          "igstAmount": 0,
+          "totalTax": 109.83,
+          "totalAmount": 719.98
+        },
+        {
+          "productId": "prod_sample_3",
+          "productName": "KTX 1.8 L dlx Kettle (670107)",
+          "sku": "KE-670107",
+          "hsnCode": "85167100",
+          "uom": "PCS",
+          "rate": 648.3,
+          "purchasePrice": 510,
+          "quantity": 1,
+          "discount": 0,
+          "taxableAmount": 648.3,
+          "gstRate": 18,
+          "cgstRate": 9,
+          "cgstAmount": 58.35,
+          "sgstRate": 9,
+          "sgstAmount": 58.35,
+          "igstRate": 0,
+          "igstAmount": 0,
+          "totalTax": 116.69,
+          "totalAmount": 764.99
+        },
+        {
+          "productId": "prod_sample_4",
+          "productName": "Bajaj Majesty Canvas Brown (440306)",
+          "sku": "KE-440306",
+          "hsnCode": "85164000",
+          "uom": "PCS",
+          "rate": 699.15,
+          "purchasePrice": 550,
+          "quantity": 1,
+          "discount": 0,
+          "taxableAmount": 699.15,
+          "gstRate": 18,
+          "cgstRate": 9,
+          "cgstAmount": 62.92,
+          "sgstRate": 9,
+          "sgstAmount": 62.92,
+          "igstRate": 0,
+          "igstAmount": 0,
+          "totalTax": 125.85,
+          "totalAmount": 825
+        },
+        {
+          "productId": "prod_sample_5",
+          "productName": "Bajaj DX 4 Neo Dry Iron (440325)",
+          "sku": "KE-440325",
+          "hsnCode": "85164000",
+          "uom": "PCS",
+          "rate": 639.83,
+          "purchasePrice": 500,
+          "quantity": 1,
+          "discount": 0,
+          "taxableAmount": 639.83,
+          "gstRate": 18,
+          "cgstRate": 9,
+          "cgstAmount": 57.58,
+          "sgstRate": 9,
+          "sgstAmount": 57.58,
+          "igstRate": 0,
+          "igstAmount": 0,
+          "totalTax": 115.17,
+          "totalAmount": 755
+        },
+        {
+          "productId": "prod_sample_6",
+          "productName": "New Popular 1000 Dry Iron (440302)",
+          "sku": "KE-440302",
+          "hsnCode": "85164000",
+          "uom": "PCS",
+          "rate": 478.81,
+          "purchasePrice": 380,
+          "quantity": 1,
+          "discount": 0,
+          "taxableAmount": 478.81,
+          "gstRate": 18,
+          "cgstRate": 9,
+          "cgstAmount": 43.09,
+          "sgstRate": 9,
+          "sgstAmount": 43.09,
+          "igstRate": 0,
+          "igstAmount": 0,
+          "totalTax": 86.19,
+          "totalAmount": 565
+        }
+      ],
+      "taxableAmount": 6601.24,
+      "totalDiscount": 0,
+      "totalCgst": 594.11,
+      "totalSgst": 594.11,
+      "totalIgst": 0,
+      "totalTax": 1188.22,
+      "roundOff": 0,
+      "grandTotal": 7789.46,
+      "amountInWords": "Seven Thousand Seven Hundred Eighty Nine Rupees and Forty Six Paise Only",
+      "isInterState": false,
+      "paymentStatus": "paid",
+      "amountPaid": 7789.46,
+      "balanceDue": 0,
+      "payments": [
+        {
+          "paymentId": "pay_sample_09",
+          "amount": 7789.46,
+          "paymentMode": "cash",
+          "paymentDate": "2026-10-31T00:00:00.000Z",
+          "notes": "Settled against bill 26-27/09"
+        }
+      ],
+      "notes": "Goods delivered in good condition.",
+      "termsAndConditions": "1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.\n2. Payments due within 5 days of Invoice date.\n3. In case of a product being defective or having a manufacturing defect, the primary responsibility for repairing or replacing it lies with the company.\n4. Burnt and broken will not be warrented, please check while purchasing.",
+      "status": "finalized",
+      "createdBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      },
+      "createdAt": "2026-10-31T00:00:00.000Z",
+      "updatedAt": "2026-10-31T00:00:00.000Z"
+    }
+  ],
+  "payments": [
+    {
+      "_id": "pay_sample_09",
+      "invoiceId": "inv_sample_09",
+      "invoiceNumber": "26-27/09",
+      "customerId": "cust_dev_electric",
+      "customerName": "DEV ELECTRIC",
+      "amount": 7789.46,
+      "paymentMode": "cash",
+      "paymentDate": "2026-10-31T00:00:00.000Z",
+      "notes": "Settled against bill 26-27/09",
+      "recordedBy": {
+        "userId": "user_admin",
+        "userName": "Admin"
+      }
+    }
+  ],
+  "auditLogs": [
+    {
+      "_id": "audit_1795506388819",
+      "action": "USER_LOGOUT",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {},
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Vivek Kumar Jha",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:46:28.819Z"
+    },
+    {
+      "_id": "audit_1795506378405",
+      "action": "USER_PROFILE_UPDATED",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "updatedFields": [
+          "name",
+          "phone"
+        ]
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Vivek Kumar Jha",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:46:18.405Z"
+    },
+    {
+      "_id": "audit_1795506326067",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:45:26.067Z"
+    },
+    {
+      "_id": "audit_1795505809515",
+      "action": "USER_LOGOUT",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {},
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Rajesh Sharma (Admin)",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:36:49.515Z"
+    },
+    {
+      "_id": "audit_1795505798443",
+      "action": "USER_DELETED",
+      "entity": "User",
+      "entityId": "user_staff",
+      "details": {
+        "name": "Billing Staff",
+        "email": "staff@kayra.com",
+        "role": "billing_staff"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Rajesh Sharma (Admin)",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:36:38.443Z"
+    },
+    {
+      "_id": "audit_1795505780397",
+      "action": "USER_DELETED",
+      "entity": "User",
+      "entityId": "user_manager",
+      "details": {
+        "name": "Store Manager",
+        "email": "manager@kayra.com",
+        "role": "manager"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Rajesh Sharma (Admin)",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:36:20.397Z"
+    },
+    {
+      "_id": "audit_1795505692524",
+      "action": "USER_PROFILE_UPDATED",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "updatedFields": [
+          "name",
+          "phone"
+        ]
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:34:52.524Z"
+    },
+    {
+      "_id": "audit_1795505691518",
+      "action": "USER_DELETED",
+      "entity": "User",
+      "entityId": "user_1795505690000",
+      "details": {
+        "name": "Temp Deletable Staff",
+        "email": "tempdel@kayra.com",
+        "role": "billing_staff"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:34:51.518Z"
+    },
+    {
+      "_id": "audit_1795505690463",
+      "action": "USER_CREATED",
+      "entity": "User",
+      "entityId": "user_1795505690000",
+      "details": {
+        "email": "tempdel@kayra.com",
+        "role": "billing_staff"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:34:50.463Z"
+    },
+    {
+      "_id": "audit_1795505687471",
+      "action": "USER_PROFILE_UPDATED",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "updatedFields": [
+          "name",
+          "phone"
+        ]
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "Rajesh Sharma (Owner)",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:34:47.471Z"
+    },
+    {
+      "_id": "audit_1795505684374",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:34:44.374Z"
+    },
+    {
+      "_id": "audit_1795505270686",
+      "action": "USER_MODIFIED",
+      "entity": "User",
+      "entityId": "user_staff",
+      "details": {
+        "modifiedFields": [
+          "passwordHash"
+        ]
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:50.686Z"
+    },
+    {
+      "_id": "audit_1795505268964",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_staff",
+      "details": {
+        "email": "staff@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_staff",
+        "userName": "Billing Staff",
+        "role": "billing_staff"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:48.964Z"
+    },
+    {
+      "_id": "audit_1795505267084",
+      "action": "USER_MODIFIED",
+      "entity": "User",
+      "entityId": "user_staff",
+      "details": {
+        "modifiedFields": [
+          "passwordHash"
+        ]
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:47.084Z"
+    },
+    {
+      "_id": "audit_1795505250672",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:30.672Z"
+    },
+    {
+      "_id": "audit_1795505228424",
+      "action": "PASSWORD_CHANGED",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:08.424Z"
+    },
+    {
+      "_id": "audit_1795505226097",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:06.097Z"
+    },
+    {
+      "_id": "audit_1795505224270",
+      "action": "PASSWORD_CHANGED",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:04.270Z"
+    },
+    {
+      "_id": "audit_1795505221453",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:27:01.453Z"
+    },
+    {
+      "_id": "audit_1795505168070",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:26:08.070Z"
+    },
+    {
+      "_id": "audit_1795504880404",
+      "action": "PRODUCT_PERMANENTLY_DELETED",
+      "entity": "Product",
+      "entityId": "prod_1795504875998",
+      "details": {
+        "name": "Temporary Test Iron To Delete",
+        "sku": "TEST-DEL-001",
+        "permanent": true
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:21:20.404Z"
+    },
+    {
+      "_id": "audit_1795504876477",
+      "action": "PRODUCT_CREATED",
+      "entity": "Product",
+      "entityId": "prod_1795504875998",
+      "details": {
+        "sku": "TEST-DEL-001",
+        "name": "Temporary Test Iron To Delete"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:21:16.477Z"
+    },
+    {
+      "_id": "audit_1795504875051",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:21:15.051Z"
+    },
+    {
+      "_id": "audit_1795504353517",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:12:33.517Z"
+    },
+    {
+      "_id": "audit_1795504337540",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:12:17.540Z"
+    },
+    {
+      "_id": "audit_1795503827772",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:03:47.772Z"
+    },
+    {
+      "_id": "audit_1795503608224",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T07:00:08.224Z"
+    },
+    {
+      "_id": "audit_1795503475559",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:57:55.559Z"
+    },
+    {
+      "_id": "audit_1795503464556",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:57:44.556Z"
+    },
+    {
+      "_id": "audit_1795503454264",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:57:34.264Z"
+    },
+    {
+      "_id": "audit_1795503402865",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:56:42.865Z"
+    },
+    {
+      "_id": "audit_1795503346508",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:55:46.508Z"
+    },
+    {
+      "_id": "audit_1795503112593",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:51:52.593Z"
+    },
+    {
+      "_id": "audit_1795503102672",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:51:42.672Z"
+    },
+    {
+      "_id": "audit_1795503085904",
+      "action": "USER_LOGIN",
+      "entity": "User",
+      "entityId": "user_admin",
+      "details": {
+        "email": "admin@kayra.com"
+      },
+      "performedBy": {
+        "userId": "user_admin",
+        "userName": "KYRA Admin",
+        "role": "admin"
+      },
+      "ipAddress": "",
+      "createdAt": "2026-11-24T06:51:25.904Z"
+    },
+    {
+      "_id": "audit_init",
+      "action": "ENTERPRISE_INITIALIZED",
+      "entity": "BusinessSettings",
+      "performedBy": {
+        "userName": "Admin",
+        "role": "admin"
+      },
+      "details": {
+        "businessName": "KYRA ENTERPRISES",
+        "gstin": "10CPLPK1520H1ZF"
+      },
+      "createdAt": "2026-11-24T06:50:27.359Z"
+    }
+  ]
+}
