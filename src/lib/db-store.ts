@@ -949,8 +949,9 @@ export const DataService = {
     const balanceDue = Math.max(0, grandTotal - amountPaid);
     const paymentStatus = balanceDue === 0 ? "paid" : amountPaid > 0 ? "partial" : "unpaid";
 
-    const nextSeq = (settings.currentInvoiceSequence || 1000) + 1;
-    const invoiceNumber = `${settings.invoicePrefix || "KE/2026-27/"}${String(nextSeq).padStart(4, "0")}`;
+    const nextSeq = (settings.currentInvoiceSequence || 9) + 1;
+    const padLen = nextSeq < 100 ? 2 : 4;
+    const invoiceNumber = `${settings.invoicePrefix || "26-27/"}${String(nextSeq).padStart(padLen, "0")}`;
 
     const paymentsRecord: any[] = [];
     if (amountPaid > 0) {
