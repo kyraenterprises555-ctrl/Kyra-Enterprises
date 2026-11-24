@@ -646,8 +646,8 @@ export const DataService = {
     if (idx === -1) return null;
 
     const prod = store.products[idx];
-    const hasInvoices = store.invoices.some((inv) =>
-      inv.items.some((it) => it.productId === id)
+    const hasInvoices = (store.invoices || []).some((inv: any) =>
+      (inv.items || []).some((it: any) => it.productId === id)
     );
 
     if (hasInvoices) {
