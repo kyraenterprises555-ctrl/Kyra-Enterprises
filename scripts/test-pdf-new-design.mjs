@@ -16,8 +16,8 @@ async function run() {
       state: "Bihar",
       stateCode: "10",
       pincode: "847223",
-      phone: "+91 98765 43210",
-      email: "kyraenterprises555@gmail.com",
+      phone: "7393931555",
+      email: "ke1133569@gmail.com",
       gstin: "10CPLPK1520H1ZF",
       bankDetails: {
         bankName: "Union Bank of India",
@@ -26,7 +26,7 @@ async function run() {
         ifscCode: "UBIN0919578",
         branch: "BENIPATTI BRANCH",
       },
-      upiId: "10cplpk1520h1zf@unionbank",
+      upiId: "QR919565590333-0113@unionbankofindia",
     },
     customer: {
       name: "DEV ELECTRIC",

@@ -1,8 +1,8 @@
 import { MongoClient } from "mongodb";
 
 const uris = [
-  "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/kayra_enterprises?authSource=admin&retryWrites=true&w=majority",
-  "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/kayra_enterprises?authMechanism=DEFAULT",
+  "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/kyra_enterprises?authSource=admin&retryWrites=true&w=majority",
+  "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/kyra_enterprises?authMechanism=DEFAULT",
   "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/?authSource=admin"
 ];
 

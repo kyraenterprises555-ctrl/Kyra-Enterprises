@@ -1,7 +1,7 @@
 {
   "settings": {
     "_id": "settings_1",
-    "businessName": "KYRA ENTERPRISES",
+    "businessName": "Kyra Enterprises",
     "logoUrl": "/logo.jpeg",
     "gstin": "10CPLPK1520H1ZF",
     "address": "BASAITHA MADHUBANI",
@@ -9,16 +9,16 @@
     "state": "Bihar",
     "stateCode": "10",
     "pincode": "847223",
-    "phone": "+91 98765 43210",
-    "email": "kyraenterprises555@gmail.com",
+    "phone": "7393931555",
+    "email": "ke1133569@gmail.com",
     "bankDetails": {
       "bankName": "Union Bank of India",
-      "accountHolder": "KYRA ENTERPRISES",
+      "accountHolder": "Kyra Enterprises",
       "accountNumber": "195721010000113",
       "ifscCode": "UBIN0919578",
       "branch": "BENIPATTI BRANCH"
     },
-    "upiId": "10cplpk1520h1zf@unionbank",
+    "upiId": "QR919565590333-0113@unionbankofindia",
     "invoicePrefix": "26-27/",
     "currentInvoiceSequence": 10,
     "invoiceTerms": "1. We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.\n2. Payments due within 5 days of Invoice date.\n3. In case of a product being defective or having a manufacturing defect, the primary responsibility for repairing or replacing it lies with the company.\n4. Burnt and broken will not be warrented, please check while purchasing.",
@@ -27,33 +27,36 @@
   "users": [
     {
       "_id": "user_admin",
-      "name": "Vivek Kumar Jha",
-      "email": "admin@kayra.com",
-      "passwordHash": "$2a$10$KtfRYeBxOq8KRcQLaB85yehLCKLTOa79f.Wzf00FlwtYmz4S7pVmG",
+      "name": "Rajesh Sharma (Admin)",
+      "email": "admin@kyra.com",
+      "passwordHash": "$2a$12$DONnuGwM4DcDYbLhhD8xeuDnfBm20PKufbTPFr.CLjZIaHLI/u27.",
       "role": "admin",
-      "phone": "+917393931555",
+      "phone": "+91 98112 34567",
       "isActive": true,
-      "createdAt": "2026-11-24T08:13:55.561Z"
+      "createdAt": "2026-11-25T06:51:59.957Z",
+      "updatedAt": "2026-11-25T06:51:59.958Z"
     },
     {
       "_id": "user_manager",
-      "name": "Store Manager",
-      "email": "manager@kayra.com",
-      "passwordHash": "$2a$10$rhnpqnjCN6M1K8KLLD6zSOzwLnkF1Ji1X1GfObIJoMO4hdHUwrAxq",
+      "name": "Pooja Verma (Manager)",
+      "email": "manager@kyra.com",
+      "passwordHash": "$2a$12$5d4rYxQoHV68u6kZpGgJUujMjZZwDxDv77s/2ioQANgHfui7fMbM2",
       "role": "manager",
-      "phone": "+91 98765 43211",
+      "phone": "+91 98112 88899",
       "isActive": true,
-      "createdAt": "2026-11-24T08:13:55.569Z"
+      "createdAt": "2026-11-25T06:52:00.362Z",
+      "updatedAt": "2026-11-25T06:52:00.362Z"
     },
     {
-      "_id": "user_staff",
-      "name": "Billing Staff",
-      "email": "staff@kayra.com",
-      "passwordHash": "$2a$10$LCcSSHIM/WA2BJJx.t1PSeQVTSCcv7DaGlwsM.QuZtUCsMdC9Sspm",
+      "_id": "user_billing_staff",
+      "name": "Amit Kumar (Billing Staff)",
+      "email": "staff@kyra.com",
+      "passwordHash": "$2a$12$L8.IUseKh6hEReXNMRzgne0/SpZX2s11UQonJXi.g1wwra6KTVHQO",
       "role": "billing_staff",
-      "phone": "+91 98765 43212",
+      "phone": "+91 98112 55544",
       "isActive": true,
-      "createdAt": "2026-11-24T08:13:55.569Z"
+      "createdAt": "2026-11-25T06:52:00.846Z",
+      "updatedAt": "2026-11-25T06:52:00.846Z"
     }
   ],
   "categories": [
@@ -896,7 +899,7 @@
         "customerType": "unregistered"
       },
       "seller": {
-        "businessName": "KYRA ENTERPRISES",
+        "businessName": "Kyra Enterprises",
         "logoUrl": "/logo.jpeg",
         "gstin": "10CPLPK1520H1ZF",
         "address": "BASAITHA MADHUBANI",
@@ -904,16 +907,16 @@
         "state": "Bihar",
         "stateCode": "10",
         "pincode": "847223",
-        "phone": "+91 98765 43210",
-        "email": "kyraenterprises555@gmail.com",
+        "phone": "7393931555",
+        "email": "ke1133569@gmail.com",
         "bankDetails": {
           "bankName": "Union Bank of India",
-          "accountHolder": "KYRA ENTERPRISES",
+          "accountHolder": "Kyra Enterprises",
           "accountNumber": "195721010000113",
           "ifscCode": "UBIN0919578",
           "branch": "BENIPATTI BRANCH"
         },
-        "upiId": "10cplpk1520h1zf@unionbank"
+        "upiId": "QR919565590333-0113@unionbankofindia"
       },
       "items": [
         {
@@ -1133,7 +1136,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1164,7 +1167,7 @@
       "entityId": "user_staff",
       "details": {
         "name": "Billing Staff",
-        "email": "staff@kayra.com",
+        "email": "staff@kyra.com",
         "role": "billing_staff"
       },
       "performedBy": {
@@ -1182,7 +1185,7 @@
       "entityId": "user_manager",
       "details": {
         "name": "Store Manager",
-        "email": "manager@kayra.com",
+        "email": "manager@kyra.com",
         "role": "manager"
       },
       "performedBy": {
@@ -1219,7 +1222,7 @@
       "entityId": "user_1795505690000",
       "details": {
         "name": "Temp Deletable Staff",
-        "email": "tempdel@kayra.com",
+        "email": "tempdel@kyra.com",
         "role": "billing_staff"
       },
       "performedBy": {
@@ -1236,7 +1239,7 @@
       "entity": "User",
       "entityId": "user_1795505690000",
       "details": {
-        "email": "tempdel@kayra.com",
+        "email": "tempdel@kyra.com",
         "role": "billing_staff"
       },
       "performedBy": {
@@ -1272,7 +1275,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1306,7 +1309,7 @@
       "entity": "User",
       "entityId": "user_staff",
       "details": {
-        "email": "staff@kayra.com"
+        "email": "staff@kyra.com"
       },
       "performedBy": {
         "userId": "user_staff",
@@ -1340,7 +1343,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1356,7 +1359,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1372,7 +1375,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1388,7 +1391,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1404,7 +1407,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1420,7 +1423,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1471,7 +1474,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1487,7 +1490,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1503,7 +1506,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1519,7 +1522,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1535,7 +1538,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1551,7 +1554,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1567,7 +1570,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1583,7 +1586,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1599,7 +1602,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1615,7 +1618,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1631,7 +1634,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1647,7 +1650,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1663,7 +1666,7 @@
       "entity": "User",
       "entityId": "user_admin",
       "details": {
-        "email": "admin@kayra.com"
+        "email": "admin@kyra.com"
       },
       "performedBy": {
         "userId": "user_admin",
@@ -1682,7 +1685,7 @@
         "role": "admin"
       },
       "details": {
-        "businessName": "KYRA ENTERPRISES",
+        "businessName": "Kyra Enterprises",
         "gstin": "10CPLPK1520H1ZF"
       },
       "createdAt": "2026-11-24T06:50:27.359Z"

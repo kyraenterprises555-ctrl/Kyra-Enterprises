@@ -6,9 +6,13 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Kayra Enterprises | Billing & Inventory Management",
+  title: {
+    default: "Kyra Enterprises | Enterprise Billing, Inventory & Payment Management",
+    template: "%s | Kyra Enterprises",
+  },
+  applicationName: "Kyra Enterprises",
   description:
-    "Enterprise-grade Billing, Inventory, GST Invoicing & Customer Management System for Kayra Enterprises.",
+    "Enterprise-grade GST Billing, Inventory, Invoice & Automatic Payment Reminder System for Kyra Enterprises.",
 };
 
 export default function RootLayout({

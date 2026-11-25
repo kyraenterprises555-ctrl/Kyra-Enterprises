@@ -10,12 +10,10 @@ import {
   Plus,
   Trash2,
   Calculator,
-  ShieldCheck,
   CreditCard,
   AlertCircle,
-  CheckCircle2,
-  ArrowRight,
-  Info,
+  Search,
+  Calendar,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -45,15 +43,15 @@ function BillingEngineContent() {
   const searchParams = useSearchParams();
   const preselectedCustId = searchParams.get("customerId");
 
-  // Master data
   const [settings, setSettings] = useState<any>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [productQuery, setProductQuery] = useState("");
 
   // Customer selection
   const [selectedCustomerId, setSelectedCustomerId] = useState(preselectedCustId || "");
-  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [saveNewCustomer, setSaveNewCustomer] = useState(true);
   const [customerData, setCustomerData] = useState({
     name: "",
     businessName: "",
@@ -62,15 +60,19 @@ function BillingEngineContent() {
     billingAddress: "",
     shippingAddress: "",
     gstin: "",
-    state: "Delhi",
-    stateCode: "07",
+    state: "Bihar",
+    stateCode: "10",
   });
 
-  // Invoice items
+  // Items, Due Date & Payment
   const [items, setItems] = useState<BillingItem[]>([]);
-
-  // Payment
-  const [paymentMode, setPaymentMode] = useState<"cash" | "upi" | "bank_transfer" | "card" | "credit">("cash");
+  const [dueDate, setDueDate] = useState<string>(() => {
+    const d = new Date(Date.now() + 5 * 24 * 3600 * 1000);
+    return d.toISOString().split("T")[0];
+  });
+  const [paymentMode, setPaymentMode] = useState<
+    "cash" | "upi" | "bank_transfer" | "card" | "credit" | "other"
+  >("cash");
   const [amountPaid, setAmountPaid] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -88,64 +90,67 @@ function BillingEngineContent() {
         const cData = await cRes.json();
         const pData = await pRes.json();
 
-        if (sData.success) setSettings(sData.settings);
+        const loadedSettings = sData.settings || {};
+        if (sData.success) {
+          setSettings(loadedSettings);
+          const dueDays = Number(loadedSettings.defaultDueDays ?? 5);
+          setDueDate(
+            new Date(Date.now() + dueDays * 24 * 3600 * 1000).toISOString().split("T")[0]
+          );
+        }
+
         if (cData.success) {
           setCustomers(cData.customers);
-          if (preselectedCustId) {
-            const found = cData.customers.find((c: any) => c._id === preselectedCustId);
-            if (found) {
-              setCustomerData({
-                name: found.name,
-                businessName: found.businessName || "",
-                phone: found.phone,
-                email: found.email || "",
-                billingAddress: found.billingAddress,
-                shippingAddress: found.shippingAddress || found.billingAddress,
-                gstin: found.gstin || "",
-                state: found.state || "Delhi",
-                stateCode: found.stateCode || "07",
-              });
-            }
-          } else if (cData.customers.length > 0) {
-            const first = cData.customers[0];
-            setSelectedCustomerId(first._id);
+          const targetCust = preselectedCustId
+            ? cData.customers.find((c: any) => String(c._id) === String(preselectedCustId))
+            : cData.customers[0];
+
+          if (targetCust) {
+            setSelectedCustomerId(targetCust._id);
             setCustomerData({
-              name: first.name,
-              businessName: first.businessName || "",
-              phone: first.phone,
-              email: first.email || "",
-              billingAddress: first.billingAddress,
-              shippingAddress: first.shippingAddress || first.billingAddress,
-              gstin: first.gstin || "",
-              state: first.state || "Delhi",
-              stateCode: first.stateCode || "07",
+              name: targetCust.name,
+              businessName: targetCust.businessName || "",
+              phone: targetCust.phone,
+              email: targetCust.email || "",
+              billingAddress: targetCust.billingAddress,
+              shippingAddress: targetCust.shippingAddress || targetCust.billingAddress,
+              gstin: targetCust.gstin || "",
+              state: targetCust.state || loadedSettings.state || "Bihar",
+              stateCode: targetCust.stateCode || loadedSettings.stateCode || "10",
             });
+          } else {
+            setSelectedCustomerId("NEW");
+            setCustomerData((prev) => ({
+              ...prev,
+              state: loadedSettings.state || "Bihar",
+              stateCode: loadedSettings.stateCode || "10",
+            }));
           }
         }
+
         if (pData.success) {
           setProducts(pData.products);
-          // Initial empty item row if products exist
-          if (pData.products.length > 0) {
-            const firstP = pData.products[0];
+          const inStockProd = pData.products.find((p: any) => p.availableQuantity > 0);
+          if (inStockProd) {
             setItems([
               {
-                productId: firstP._id,
-                name: firstP.name,
-                sku: firstP.sku,
-                hsnCode: firstP.hsnCode,
-                uom: firstP.uom,
-                availableStock: firstP.availableQuantity,
-                rate: firstP.sellingPrice,
+                productId: inStockProd._id,
+                name: inStockProd.name,
+                sku: inStockProd.sku,
+                hsnCode: inStockProd.hsnCode,
+                uom: inStockProd.uom,
+                availableStock: inStockProd.availableQuantity,
+                rate: inStockProd.sellingPrice,
                 quantity: 1,
                 discount: 0,
                 discountPercent: 0,
-                gstRate: firstP.gstRate,
+                gstRate: inStockProd.gstRate,
               },
             ]);
           }
         }
       } catch {
-        toast.error("Failed to load billing dependencies");
+        toast.error("Failed to load GST billing configuration");
       } finally {
         setLoading(false);
       }
@@ -153,11 +158,9 @@ function BillingEngineContent() {
     loadInitialData();
   }, [preselectedCustId]);
 
-  // When customer dropdown changes
   const handleCustomerSelect = (id: string) => {
     setSelectedCustomerId(id);
     if (id === "NEW") {
-      setIsNewCustomer(true);
       setCustomerData({
         name: "",
         businessName: "",
@@ -166,12 +169,11 @@ function BillingEngineContent() {
         billingAddress: "",
         shippingAddress: "",
         gstin: "",
-        state: settings?.state || "Delhi",
-        stateCode: settings?.stateCode || "07",
+        state: settings?.state || "Bihar",
+        stateCode: settings?.stateCode || "10",
       });
     } else {
-      setIsNewCustomer(false);
-      const cust = customers.find((c) => c._id === id);
+      const cust = customers.find((c) => String(c._id) === String(id));
       if (cust) {
         setCustomerData({
           name: cust.name,
@@ -201,101 +203,147 @@ function BillingEngineContent() {
     }));
   };
 
-  // Add line item
-  const addItemRow = () => {
-    if (products.length === 0) return;
-    const firstP = products[0];
+  const handleStateChange = (stateName: string) => {
+    const s = INDIAN_STATES.find((item) => item.name === stateName);
+    setCustomerData((prev) => ({
+      ...prev,
+      state: stateName,
+      stateCode: s ? s.code : prev.stateCode,
+    }));
+  };
+
+  const filteredQuickProducts = useMemo(() => {
+    if (!productQuery.trim()) return [];
+    const q = productQuery.toLowerCase();
+    return products
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q) ||
+          (p.hsnCode && String(p.hsnCode).includes(q))
+      )
+      .slice(0, 8);
+  }, [products, productQuery]);
+
+  const addProductToInvoice = (prod: any) => {
+    if (prod.availableQuantity <= 0) {
+      toast.error(`"${prod.name}" is currently out of stock (0 available)`);
+      return;
+    }
+    const existingIdx = items.findIndex((it) => it.productId === prod._id);
+    if (existingIdx !== -1) {
+      const next = items.slice();
+      if (next[existingIdx].quantity + 1 > prod.availableQuantity) {
+        toast.error(`Cannot exceed available stock (${prod.availableQuantity} ${prod.uom})`);
+        return;
+      }
+      next[existingIdx].quantity += 1;
+      setItems(next);
+    } else {
+      setItems((prev) => [
+        ...prev,
+        {
+          productId: prod._id,
+          name: prod.name,
+          sku: prod.sku,
+          hsnCode: prod.hsnCode,
+          uom: prod.uom,
+          availableStock: prod.availableQuantity,
+          rate: prod.sellingPrice,
+          quantity: 1,
+          discount: 0,
+          discountPercent: 0,
+          gstRate: prod.gstRate,
+        },
+      ]);
+    }
+    setProductQuery("");
+  };
+
+  const handleAddRow = () => {
+    const availableProd = products.find((p) => p.availableQuantity > 0) || products[0];
+    if (!availableProd) return;
     setItems((prev) => [
       ...prev,
       {
-        productId: firstP._id,
-        name: firstP.name,
-        sku: firstP.sku,
-        hsnCode: firstP.hsnCode,
-        uom: firstP.uom,
-        availableStock: firstP.availableQuantity,
-        rate: firstP.sellingPrice,
+        productId: availableProd._id,
+        name: availableProd.name,
+        sku: availableProd.sku,
+        hsnCode: availableProd.hsnCode,
+        uom: availableProd.uom,
+        availableStock: availableProd.availableQuantity,
+        rate: availableProd.sellingPrice,
         quantity: 1,
         discount: 0,
         discountPercent: 0,
-        gstRate: firstP.gstRate,
+        gstRate: availableProd.gstRate,
       },
     ]);
   };
 
-  // Update item product
-  const handleProductChange = (index: number, productId: string) => {
-    const prod = products.find((p) => p._id === productId);
+  const handleProductRowSelect = (rowIdx: number, prodId: string) => {
+    const prod = products.find((p) => String(p._id) === String(prodId));
     if (!prod) return;
-
-    setItems((prev) => {
-      const copy = [...prev];
-      copy[index] = {
-        ...copy[index],
-        productId: prod._id,
-        name: prod.name,
-        sku: prod.sku,
-        hsnCode: prod.hsnCode,
-        uom: prod.uom,
-        availableStock: prod.availableQuantity,
-        rate: prod.sellingPrice,
-        gstRate: prod.gstRate,
-      };
-      return copy;
-    });
+    const next = items.slice();
+    next[rowIdx] = {
+      productId: prod._id,
+      name: prod.name,
+      sku: prod.sku,
+      hsnCode: prod.hsnCode,
+      uom: prod.uom,
+      availableStock: prod.availableQuantity,
+      rate: prod.sellingPrice,
+      quantity: 1,
+      discount: 0,
+      discountPercent: 0,
+      gstRate: prod.gstRate,
+    };
+    setItems(next);
   };
 
-  const updateItemField = (index: number, field: keyof BillingItem, value: any) => {
-    setItems((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], [field]: value };
-      return copy;
-    });
+  const updateRowField = (rowIdx: number, field: keyof BillingItem, val: number) => {
+    const next = items.slice();
+    next[rowIdx] = { ...next[rowIdx], [field]: val };
+    setItems(next);
   };
 
-  const removeItemRow = (index: number) => {
-    if (items.length <= 1) {
-      toast.error("An invoice must contain at least one line item");
-      return;
-    }
-    setItems((prev) => prev.filter((_, i) => i !== index));
+  const removeRow = (rowIdx: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== rowIdx));
   };
 
-  // Calculate live taxes
-  const sellerStateCode = settings?.stateCode || "07";
-  const customerStateCode = customerData.stateCode || "07";
-
-  const calculation = useMemo(() => {
+  const sellerStateCode = settings?.stateCode || "10";
+  const taxResult = useMemo(() => {
     return calculateInvoiceTaxes(
       items.map((it) => ({
         rate: Number(it.rate || 0),
-        quantity: Number(it.quantity || 1),
+        quantity: Number(it.quantity || 0),
         discount: Number(it.discount || 0),
         discountPercent: Number(it.discountPercent || 0),
         gstRate: Number(it.gstRate || 0),
       })),
       sellerStateCode,
-      customerStateCode
+      customerData.stateCode || sellerStateCode
     );
-  }, [items, sellerStateCode, customerStateCode]);
+  }, [items, sellerStateCode, customerData.stateCode]);
 
-  // Handle invoice generation
-  const handleGenerateInvoice = async () => {
-    if (!customerData.name || !customerData.phone || !customerData.billingAddress) {
-      toast.error("Please complete the required customer details");
+  const paidNum = Math.min(Math.max(0, Number(amountPaid || 0)), taxResult.summary.grandTotal);
+  const balancePreview = Math.max(0, taxResult.summary.grandTotal - paidNum);
+
+  const handleGenerateInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerData.name.trim() || !customerData.phone.trim() || !customerData.billingAddress.trim()) {
+      toast.error("Customer Name, Phone, and Billing Address are required");
       return;
     }
-
-    // Check stock
+    if (items.length === 0) {
+      toast.error("Please add at least one product to the invoice");
+      return;
+    }
     for (const it of items) {
       if (it.quantity > it.availableStock) {
         toast.error(
           `Insufficient stock for "${it.name}". Available: ${it.availableStock}, Requested: ${it.quantity}`
         );
-        return;
-      }
-      if (it.quantity <= 0) {
-        toast.error(`Quantity for "${it.name}" must be at least 1`);
         return;
       }
     }
@@ -306,7 +354,8 @@ function BillingEngineContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerId: isNewCustomer ? undefined : selectedCustomerId,
+          customerId: selectedCustomerId !== "NEW" ? selectedCustomerId : undefined,
+          saveNewCustomer: selectedCustomerId === "NEW" ? saveNewCustomer : false,
           customerData,
           items: items.map((it) => ({
             productId: it.productId,
@@ -315,20 +364,20 @@ function BillingEngineContent() {
             discount: Number(it.discount || 0),
             discountPercent: Number(it.discountPercent || 0),
           })),
+          dueDate,
           paymentMode,
-          amountPaid: amountPaid ? Number(amountPaid) : calculation.summary.grandTotal,
+          amountPaid: paidNum,
           notes,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create invoice");
+      if (!res.ok) throw new Error(data.error || "Failed to generate GST invoice");
 
-      toast.success(`Invoice ${data.invoice.invoiceNumber} generated successfully!`);
+      toast.success(`GST Tax Invoice ${data.invoice.invoiceNumber} generated!`);
       router.push(`/invoices/${data.invoice._id}`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error generating invoice";
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : "Error generating invoice");
     } finally {
       setGenerating(false);
     }
@@ -338,149 +387,134 @@ function BillingEngineContent() {
     return (
       <div className="py-24 text-center text-slate-400">
         <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs font-medium">Loading GST Billing Terminal...</p>
+        <p className="text-xs font-medium">Initializing Kyra Enterprises GST Billing Terminal...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleGenerateInvoice} className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <FilePlus2 className="w-5 h-5 text-emerald-600" />
-            <span>New Tax Invoice (GST Billing Terminal)</span>
+            <span>Create GST Tax Invoice &mdash; Kyra Enterprises</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Auto-calculates CGST, SGST, IGST and generates immutable tax receipts
+            Automatic Seller Snapshot, Intra/Inter-State GST Calculation, Stock Validation &amp; Payment Recording
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              calculation.summary.isInterState
-                ? "bg-purple-100 text-purple-700 border border-purple-200"
-                : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-            }`}
-          >
-            {calculation.summary.isInterState
-              ? "⚡ Inter-State Supply (IGST Applicable)"
-              : "✓ Intra-State Supply (CGST + SGST Applicable)"}
+        <div className="px-3.5 py-2 rounded-xl bg-[#0e1e32] text-white text-xs flex items-center gap-2">
+          <span className="text-slate-300">Tax Mode:</span>
+          <span className="font-bold text-emerald-400">
+            {taxResult.summary.isInterState
+              ? "Inter-State Supply (IGST)"
+              : "Intra-State Supply (CGST + SGST)"}
           </span>
         </div>
       </div>
 
-      {/* Step 1 & 2: Seller & Customer Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Step 1: Seller Details Card */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs relative overflow-hidden">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+      {/* Seller + Customer Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Seller Card (Auto-fetched from Business Settings) */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5 text-xs">
+          <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
             <Building2 className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Step 1: Seller Details (Kayra Enterprises)
-            </h2>
+            <span>Seller (Business Settings)</span>
           </div>
-
-          <div className="text-xs space-y-1.5 text-slate-600">
-            <div className="font-bold text-slate-900 text-sm">{settings?.businessName}</div>
-            <div>{settings?.address}</div>
-            <div>
-              {settings?.city}, {settings?.state} - {settings?.pincode} (State Code:{" "}
-              <strong className="text-slate-800 font-mono">{settings?.stateCode}</strong>)
-            </div>
-            <div className="pt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
-              <span>
-                GSTIN: <strong className="text-slate-800 font-mono">{settings?.gstin}</strong>
-              </span>
-              <span>Phone: {settings?.phone}</span>
-              <span>Email: {settings?.email}</span>
-            </div>
+          <div className="text-sm font-bold text-[#0e1e32]">
+            {settings?.businessName || "Kyra Enterprises"}
+          </div>
+          <div className="text-slate-600">
+            {settings?.address}, {settings?.city}, {settings?.state} ({settings?.stateCode}) &ndash;{" "}
+            {settings?.pincode}
+          </div>
+          <div className="font-mono font-bold text-emerald-700">
+            GSTIN: {settings?.gstin || "Configure in Business Settings"}
+          </div>
+          <div className="text-slate-500">
+            Phone: {settings?.phone} &bull; {settings?.email}
           </div>
         </div>
 
-        {/* Step 2: Customer Selection Card */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
-            <div className="flex items-center gap-2">
+        {/* Customer Information */}
+        <div className="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs space-y-4 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider">
               <Users className="w-4 h-4 text-emerald-600" />
-              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Step 2: Customer / Buyer Information
-              </h2>
+              <span>Customer / Buyer Information</span>
             </div>
 
             <select
-              value={isNewCustomer ? "NEW" : selectedCustomerId}
+              value={selectedCustomerId}
               onChange={(e) => handleCustomerSelect(e.target.value)}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 font-medium text-slate-700 focus:outline-none focus:border-emerald-500"
+              className="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-semibold text-slate-900"
             >
+              <option value="NEW">+ Enter / Add New Customer</option>
               {customers.map((c) => (
                 <option key={c._id} value={c._id}>
-                  {c.name} {c.businessName ? `(${c.businessName})` : ""}
+                  {c.name} ({c.phone}) &mdash; {c.state}
                 </option>
               ))}
-              <option value="NEW">+ Add New Customer Inline</option>
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-                Buyer Name *
-              </label>
+              <label className="block font-semibold text-slate-700 mb-1">Customer Name *</label>
               <input
                 type="text"
                 required
                 value={customerData.name}
                 onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
-                placeholder="Client Name"
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-                Phone Number *
-              </label>
+              <label className="block font-semibold text-slate-700 mb-1">Phone Number *</label>
               <input
                 type="tel"
                 required
                 value={customerData.phone}
                 onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
-                placeholder="+91..."
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-                Buyer GSTIN (Optional)
-              </label>
+              <label className="block font-semibold text-slate-700 mb-1">Customer GSTIN</label>
               <input
                 type="text"
+                maxLength={15}
                 value={customerData.gstin}
                 onChange={(e) => handleGstinChange(e.target.value)}
-                placeholder="e.g. 09AABCS1234E1Z8"
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-mono uppercase text-slate-900 focus:outline-none focus:border-emerald-500"
+                placeholder="Optional (B2B)"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono uppercase text-slate-900"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Billing Address *</label>
+              <input
+                type="text"
+                required
+                value={customerData.billingAddress}
+                onChange={(e) =>
+                  setCustomerData({ ...customerData, billingAddress: e.target.value })
+                }
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-                Place of Supply (State) *
-              </label>
+              <label className="block font-semibold text-slate-700 mb-1">Customer State *</label>
               <select
                 value={customerData.state}
-                onChange={(e) => {
-                  const s = INDIAN_STATES.find((st) => st.name === e.target.value);
-                  setCustomerData({
-                    ...customerData,
-                    state: e.target.value,
-                    stateCode: s ? s.code : customerData.stateCode,
-                  });
-                }}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                onChange={(e) => handleStateChange(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
               >
                 {INDIAN_STATES.map((s) => (
                   <option key={s.code} value={s.name}>
@@ -489,151 +523,177 @@ function BillingEngineContent() {
                 ))}
               </select>
             </div>
-
-            <div className="col-span-2">
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-                Billing Address *
-              </label>
-              <input
-                type="text"
-                required
-                value={customerData.billingAddress}
-                onChange={(e) => setCustomerData({ ...customerData, billingAddress: e.target.value })}
-                placeholder="Street Address, City, Postal Code"
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
           </div>
+
+          {selectedCustomerId === "NEW" && (
+            <label className="inline-flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
+              <input
+                type="checkbox"
+                checked={saveNewCustomer}
+                onChange={(e) => setSaveNewCustomer(e.target.checked)}
+                className="w-4 h-4 accent-emerald-600"
+              />
+              <span>Save this buyer to Kyra Enterprises Customer Directory</span>
+            </label>
+          )}
         </div>
       </div>
 
-      {/* Step 3 & 4: Line Items Table & Live Tax Breakdown */}
+      {/* Product Selection & Line Items */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Package className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Step 3: Line Item Catalogue Selection
-            </h2>
+            <h2 className="text-sm font-bold text-slate-900">Product Line Items &amp; GST Slab</h2>
           </div>
 
-          <button
-            type="button"
-            onClick={addItemRow}
-            className="flex items-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Add Item Row</span>
-          </button>
+          {/* Quick Search by Name or SKU */}
+          <div className="flex items-center gap-2 w-full md:w-auto relative">
+            <div className="relative w-full md:w-80">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={productQuery}
+                onChange={(e) => setProductQuery(e.target.value)}
+                placeholder="Quick add by Product Name, SKU, or HSN..."
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+              />
+              {filteredQuickProducts.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto divide-y divide-slate-100 text-xs">
+                  {filteredQuickProducts.map((p) => (
+                    <button
+                      type="button"
+                      key={p._id}
+                      onClick={() => addProductToInvoice(p)}
+                      className="w-full p-2.5 text-left hover:bg-emerald-50 flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900 truncate">{p.name}</div>
+                        <div className="text-[10px] font-mono text-slate-500">
+                          SKU: {p.sku} &bull; HSN: {p.hsnCode} &bull; GST: {p.gstRate}%
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-mono font-bold text-emerald-700">
+                          {formatCurrency(p.sellingPrice)}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          Stock: {p.availableQuantity} {p.uom}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#0e1e32] hover:bg-[#142a45] text-white text-xs font-semibold shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Add Row</span>
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
-                <th className="py-3 px-3 w-8 text-center">#</th>
-                <th className="py-3 px-3 min-w-[220px]">Product / Item</th>
-                <th className="py-3 px-3 text-center">HSN</th>
-                <th className="py-3 px-3 text-center w-24">Qty</th>
-                <th className="py-3 px-3 text-right w-28">Rate (₹)</th>
-                <th className="py-3 px-3 text-right w-24">Disc (₹)</th>
-                <th className="py-3 px-3 text-right">Taxable</th>
-                <th className="py-3 px-3 text-center">GST %</th>
-                <th className="py-3 px-3 text-right">Tax Amount</th>
-                <th className="py-3 px-3 text-right">Line Total</th>
-                <th className="py-3 px-3 text-center w-10"></th>
+                <th className="py-2.5 px-3 min-w-[230px]">Product</th>
+                <th className="py-2.5 px-3 text-center">HSN</th>
+                <th className="py-2.5 px-3 text-center">Stock</th>
+                <th className="py-2.5 px-3 text-center w-24">Qty</th>
+                <th className="py-2.5 px-3 text-right w-28">Rate (₹)</th>
+                <th className="py-2.5 px-3 text-right w-24">Disc %</th>
+                <th className="py-2.5 px-3 text-right">Taxable</th>
+                <th className="py-2.5 px-3 text-center">GST %</th>
+                <th className="py-2.5 px-3 text-right">Tax Amt</th>
+                <th className="py-2.5 px-3 text-right">Line Total</th>
+                <th className="py-2.5 px-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {items.map((item, index) => {
-                const calc = calculation.items[index];
-                const isOverStock = item.quantity > item.availableStock;
-
+              {items.map((it, idx) => {
+                const calc = taxResult.items[idx];
+                const overStock = it.quantity > it.availableStock;
                 return (
-                  <tr key={index} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-3 text-center text-slate-400 font-mono">
-                      {index + 1}
-                    </td>
-                    <td className="py-3 px-3">
+                  <tr key={idx} className={overStock ? "bg-red-50/50" : ""}>
+                    <td className="py-2 px-3">
                       <select
-                        value={item.productId}
-                        onChange={(e) => handleProductChange(index, e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500"
+                        value={it.productId}
+                        onChange={(e) => handleProductRowSelect(idx, e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold text-slate-900"
                       >
                         {products.map((p) => (
                           <option key={p._id} value={p._id}>
-                            {p.name} (Stock: {p.availableQuantity} {p.uom})
+                            {p.name} ({p.sku})
                           </option>
                         ))}
                       </select>
-                      <div className="flex items-center gap-2 mt-1 text-[11px]">
-                        <span className="font-mono text-slate-400">SKU: {item.sku}</span>
-                        <span
-                          className={`font-semibold ${
-                            isOverStock ? "text-red-600" : "text-emerald-700"
-                          }`}
-                        >
-                          • Available: {item.availableStock} {item.uom}
-                        </span>
-                      </div>
                     </td>
-                    <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-500">
-                      {item.hsnCode}
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateItemField(index, "quantity", Math.max(1, parseInt(e.target.value) || 1))
-                        }
-                        className={`w-20 text-center bg-slate-50 border rounded px-2 py-1 font-semibold text-xs focus:outline-none ${
-                          isOverStock
-                            ? "border-red-400 text-red-700 bg-red-50"
-                            : "border-slate-200 text-slate-900 focus:border-emerald-500"
+                    <td className="py-2 px-3 text-center font-mono text-slate-500">{it.hsnCode}</td>
+                    <td className="py-2 px-3 text-center">
+                      <span
+                        className={`font-mono font-bold text-[11px] ${
+                          overStock ? "text-red-600" : "text-emerald-700"
                         }`}
+                      >
+                        {it.availableStock} {it.uom}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3">
+                      <input
+                        type="number"
+                        min={1}
+                        max={it.availableStock}
+                        value={it.quantity}
+                        onChange={(e) => updateRowField(idx, "quantity", Number(e.target.value))}
+                        className="w-full text-center bg-slate-50 border border-slate-300 rounded px-2 py-1 font-mono font-bold"
                       />
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-2 px-3">
                       <input
                         type="number"
                         step="0.01"
-                        value={item.rate}
-                        onChange={(e) => updateItemField(index, "rate", parseFloat(e.target.value) || 0)}
-                        className="w-24 text-right bg-slate-50 border border-slate-200 rounded px-2 py-1 font-medium text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                        min={0}
+                        value={it.rate}
+                        onChange={(e) => updateRowField(idx, "rate", Number(e.target.value))}
+                        className="w-full text-right bg-slate-50 border border-slate-300 rounded px-2 py-1 font-mono"
                       />
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-2 px-3">
                       <input
                         type="number"
-                        step="0.01"
-                        value={item.discount || ""}
+                        step="0.1"
+                        min={0}
+                        max={100}
+                        value={it.discountPercent}
                         onChange={(e) =>
-                          updateItemField(index, "discount", parseFloat(e.target.value) || 0)
+                          updateRowField(idx, "discountPercent", Number(e.target.value))
                         }
-                        placeholder="0"
-                        className="w-20 text-right bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                        className="w-full text-right bg-slate-50 border border-slate-300 rounded px-2 py-1 font-mono"
                       />
                     </td>
-                    <td className="py-3 px-3 text-right font-semibold text-slate-800">
-                      {calc ? formatCurrency(calc.taxableAmount) : "-"}
+                    <td className="py-2 px-3 text-right font-mono">
+                      {formatCurrency(calc?.taxableAmount || 0)}
                     </td>
-                    <td className="py-3 px-3 text-center font-medium text-slate-700">
-                      {item.gstRate}%
+                    <td className="py-2 px-3 text-center font-mono font-semibold text-blue-700">
+                      {it.gstRate}%
                     </td>
-                    <td className="py-3 px-3 text-right text-slate-600">
-                      {calc ? formatCurrency(calc.totalTax) : "-"}
+                    <td className="py-2 px-3 text-right font-mono text-slate-600">
+                      {formatCurrency(calc?.totalTax || 0)}
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-slate-900">
-                      {calc ? formatCurrency(calc.totalAmount) : "-"}
+                    <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                      {formatCurrency(calc?.totalAmount || 0)}
                     </td>
-                    <td className="py-3 px-3 text-center">
+                    <td className="py-2 px-3 text-right">
                       <button
                         type="button"
-                        onClick={() => removeItemRow(index)}
-                        className="text-slate-400 hover:text-red-600 p-1 rounded"
-                        title="Remove Item"
+                        onClick={() => removeRow(idx)}
+                        className="p-1 text-slate-400 hover:text-red-600"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -644,163 +704,172 @@ function BillingEngineContent() {
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Step 4: Live Invoice Calculations Summary Bar */}
-        <div className="p-5 bg-slate-50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Notes and Amount in words */}
-          <div className="space-y-3">
+      {/* Bottom Payment & GST Tax Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Payment & Due Date */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs space-y-4 text-xs">
+          <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
+            <CreditCard className="w-4 h-4 text-emerald-600" />
+            <span>Payment Collection &amp; Credit Due Date</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
-                Amount in Words (INR):
-              </span>
-              <p className="text-xs font-semibold text-emerald-800 bg-emerald-50/80 border border-emerald-200/60 p-2.5 rounded-lg italic">
-                {numberToWordsINR(calculation.summary.grandTotal)}
-              </p>
+              <label className="block font-semibold text-slate-700 mb-1">Payment Method</label>
+              <select
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value as any)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+              >
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="card">Card</option>
+                <option value="credit">Credit (Pay Later)</option>
+                <option value="other">Other</option>
+              </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                Invoice Notes / Remarks
+              <label className="block font-semibold text-slate-700 mb-1">
+                Amount Received Now (₹)
               </label>
-              <textarea
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Special delivery instructions or PO reference number..."
-                className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
+              <div className="flex gap-1">
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  max={taxResult.summary.grandTotal}
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAmountPaid(String(taxResult.summary.grandTotal))}
+                  className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-[10px] shrink-0"
+                >
+                  Full
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Payment Due Date</span>
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono text-slate-900"
               />
             </div>
           </div>
 
-          {/* Tax Breakdown Card */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Total Taxable Value:</span>
-              <span className="font-semibold text-slate-800">
-                {formatCurrency(calculation.summary.taxableAmount)}
+          {balancePreview > 0 && (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2 text-[11px]">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Remaining balance of <strong>{formatCurrency(balancePreview)}</strong> will be tracked in the Customer Ledger and automatically scheduled for recurring{" "}
+                <strong>{settings?.reminderSettings?.intervalDays || 4}-day payment reminders</strong> until fully paid.
               </span>
             </div>
+          )}
 
-            {calculation.summary.totalDiscount > 0 && (
-              <div className="flex justify-between text-emerald-600">
-                <span>Total Discount Given:</span>
-                <span className="font-semibold">
-                  -{formatCurrency(calculation.summary.totalDiscount)}
-                </span>
-              </div>
-            )}
-
-            {calculation.summary.isInterState ? (
-              <div className="flex justify-between text-purple-700">
-                <span>Integrated GST (IGST):</span>
-                <span className="font-semibold">
-                  {formatCurrency(calculation.summary.totalIgst)}
-                </span>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between text-slate-600">
-                  <span>Central GST (CGST):</span>
-                  <span className="font-semibold">
-                    {formatCurrency(calculation.summary.totalCgst)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>State GST (SGST):</span>
-                  <span className="font-semibold">
-                    {formatCurrency(calculation.summary.totalSgst)}
-                  </span>
-                </div>
-              </>
-            )}
-
-            {calculation.summary.roundOff !== 0 && (
-              <div className="flex justify-between text-slate-500">
-                <span>Round Off:</span>
-                <span>{formatCurrency(calculation.summary.roundOff)}</span>
-              </div>
-            )}
-
-            <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm font-bold text-slate-900">
-              <span>Grand Total:</span>
-              <span className="text-base text-emerald-600">
-                {formatCurrency(calculation.summary.grandTotal)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Step 5: Payment Mode & Generation */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-emerald-600" />
-            <span className="text-xs font-bold text-slate-900">Payment Mode:</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {(["cash", "upi", "bank_transfer", "card", "credit"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setPaymentMode(mode)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
-                  paymentMode === mode
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {mode.replace("_", " ")}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Amount Paid (₹):</span>
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Invoice Notes</label>
             <input
-              type="number"
-              value={amountPaid}
-              onChange={(e) => setAmountPaid(e.target.value)}
-              placeholder={String(calculation.summary.grandTotal)}
-              className="w-28 bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional dispatch note, vehicle number, or PO reference..."
+              className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
             />
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGenerateInvoice}
-          disabled={generating}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
-        >
-          {generating ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Generating Invoice & Deducting Stock...</span>
-            </>
-          ) : (
-            <>
-              <span>Generate Tax Invoice ({formatCurrency(calculation.summary.grandTotal)})</span>
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
+        {/* GST Summary & Submit */}
+        <div className="bg-[#0e1e32] text-white p-6 rounded-2xl shadow-lg flex flex-col justify-between space-y-4">
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider pb-2 border-b border-slate-800">
+              <Calculator className="w-4 h-4" />
+              <span>Server-Validated GST Summary</span>
+            </div>
+
+            <div className="flex justify-between text-slate-300">
+              <span>Taxable Value</span>
+              <span className="font-mono">{formatCurrency(taxResult.summary.taxableAmount)}</span>
+            </div>
+            {taxResult.summary.totalDiscount > 0 && (
+              <div className="flex justify-between text-emerald-400">
+                <span>Total Discount</span>
+                <span className="font-mono">-{formatCurrency(taxResult.summary.totalDiscount)}</span>
+              </div>
+            )}
+
+            {taxResult.summary.isInterState ? (
+              <div className="flex justify-between text-slate-300">
+                <span>IGST (Inter-State)</span>
+                <span className="font-mono">+{formatCurrency(taxResult.summary.totalIgst)}</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between text-slate-300">
+                  <span>CGST (Intra-State)</span>
+                  <span className="font-mono">+{formatCurrency(taxResult.summary.totalCgst)}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>SGST (Intra-State)</span>
+                  <span className="font-mono">+{formatCurrency(taxResult.summary.totalSgst)}</span>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-between text-slate-400">
+              <span>Round Off</span>
+              <span className="font-mono">{taxResult.summary.roundOff.toFixed(2)}</span>
+            </div>
+
+            <div className="pt-3 border-t border-slate-700 flex items-baseline justify-between">
+              <span className="text-sm font-bold">Grand Total</span>
+              <span className="text-2xl font-bold font-mono text-emerald-400">
+                {formatCurrency(taxResult.summary.grandTotal)}
+              </span>
+            </div>
+
+            <div className="text-[11px] text-slate-400 italic">
+              {numberToWordsINR(taxResult.summary.grandTotal)}
+            </div>
+
+            <div className="pt-2 border-t border-slate-800 flex justify-between text-xs">
+              <span className="text-slate-300">Paid: {formatCurrency(paidNum)}</span>
+              <span className="font-mono font-bold text-amber-400">
+                Balance Due: {formatCurrency(balancePreview)}
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={generating || items.length === 0}
+            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition-colors disabled:opacity-50 shadow-md"
+          >
+            {generating ? "Generating GST Tax Invoice..." : "Finalize & Issue GST Tax Invoice"}
+          </button>
+        </div>
       </div>
-    </div>
+    </form>
   );
 }
 
 export default function NewInvoicePage() {
   return (
-    <Suspense
-      fallback={
-        <div className="py-24 text-center text-slate-400">
-          <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs font-medium">Loading GST Billing Terminal...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="py-20 text-center text-xs text-slate-400">Loading...</div>}>
       <BillingEngineContent />
     </Suspense>
   );

@@ -3,9 +3,10 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { SessionUser, UserRole } from "@/types";
 
-const JWT_SECRET = process.env.JWT_SECRET || "kayra_enterprises_production_jwt_secret_key_9876543210_enterprise_secure";
+const JWT_SECRET =
+  process.env.JWT_SECRET || "kyra_enterprises_production_jwt_secret_key_9876543210_enterprise_secure";
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
-export const AUTH_COOKIE_NAME = "kayra_session";
+export const AUTH_COOKIE_NAME = "kyra_session";
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(12);
@@ -61,7 +62,7 @@ export async function setSessionCookie(token: string): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   });
 }
 

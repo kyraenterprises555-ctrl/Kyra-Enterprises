@@ -433,7 +433,7 @@ export default function UsersManagementPage() {
                   disabled={isEditOpen}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="name@kayra.com"
+                  placeholder="name@kyra.com"
                   className={`w-full border rounded-lg px-3 py-2 text-xs focus:outline-none ${
                     isEditOpen
                       ? "bg-slate-100 border-slate-200 text-slate-500 cursor-not-allowed"
@@ -658,7 +658,7 @@ export default function UsersManagementPage() {
                 </span>
               </div>
               <div className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2.5 leading-relaxed">
-                <strong>Warning:</strong> Deleting this staff account will permanently remove their access to Kayra Enterprises. Historical invoices and audit records created by this user will remain preserved with their name for legal compliance.
+                <strong>Warning:</strong> Deleting this staff account will permanently remove their access to Kyra Enterprises. Historical invoices and audit records created by this user will remain preserved with their name for legal compliance.
               </div>
             </div>
 

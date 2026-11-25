@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { DataService } from "@/lib/db-store";
 import { getCurrentUser } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
+import { createInvoiceSchema } from "@/lib/validations";
 
 export async function GET(request: Request) {
   try {
@@ -9,8 +10,14 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || undefined;
     const status = searchParams.get("status") || undefined;
     const paymentStatus = searchParams.get("paymentStatus") || undefined;
+    const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-    const invoices = await DataService.getInvoices({ search, status, paymentStatus });
+    const invoices = await DataService.getInvoices({
+      search,
+      status,
+      paymentStatus,
+      includeDeleted,
+    });
     return NextResponse.json({ success: true, invoices });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to fetch invoices";
@@ -26,22 +33,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { customerId, customerData, items, paymentMode, amountPaid, notes } = body;
-
-    if (!customerData || !items || items.length === 0) {
+    const parsed = createInvoiceSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Customer details and at least one line item are required" },
+        { error: parsed.error.issues[0]?.message || "Invalid invoice payload" },
         { status: 400 }
       );
     }
 
     const invoice = await DataService.createInvoice({
-      customerId,
-      customerData,
-      items,
-      paymentMode,
-      amountPaid: Number(amountPaid || 0),
-      notes,
+      ...parsed.data,
       user: { userId: user.userId, userName: user.name },
     });
 
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
       details: {
         invoiceNumber: invoice.invoiceNumber,
         grandTotal: invoice.grandTotal,
+        amountPaid: invoice.amountPaid,
+        balanceDue: invoice.balanceDue,
         customer: invoice.customer.name,
       },
     });

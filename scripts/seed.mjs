@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 const MONGODB_URI =
   process.env.MONGODB_URI ||
-  "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/kayra_enterprises?retryWrites=true&w=majority&appName=Cluster0";
+  "mongodb+srv://kyraenterprises555_db_user:Admin1234@cluster0.qixixqm.mongodb.net/kyra_enterprises?retryWrites=true&w=majority&appName=Cluster0";
 
 async function hashPassword(password) {
   const salt = await bcrypt.genSalt(12);
@@ -23,7 +23,7 @@ async function seed() {
   if (!existingSettings) {
     console.log("Seeding Business Settings...");
     await settingsColl.insertOne({
-      businessName: "KYRA ENTERPRISES",
+      businessName: "Kyra Enterprises",
       logoUrl: "/logo.jpeg",
       gstin: "10CPLPK1520H1ZF",
       address: "BASAITHA MADHUBANI",
@@ -31,16 +31,16 @@ async function seed() {
       state: "Bihar",
       stateCode: "10",
       pincode: "847223",
-      phone: "+91 98765 43210",
-      email: "kyraenterprises555@gmail.com",
+      phone: "7393931555",
+      email: "ke1133569@gmail.com",
       bankDetails: {
         bankName: "Union Bank of India",
-        accountHolder: "KYRA ENTERPRISES",
+        accountHolder: "Kyra Enterprises",
         accountNumber: "195721010000113",
         ifscCode: "UBIN0919578",
         branch: "BENIPATTI BRANCH",
       },
-      upiId: "10cplpk1520h1zf@unionbank",
+      upiId: "QR919565590333-0113@unionbankofindia",
       invoicePrefix: "26-27/",
       currentInvoiceSequence: 10,
       invoiceTerms:
@@ -52,7 +52,7 @@ async function seed() {
 
   // 2. Users
   const userColl = db.collection("users");
-  const existingAdmin = await userColl.findOne({ email: "admin@kayra.com" });
+  const existingAdmin = await userColl.findOne({ email: "admin@kyra.com" });
   if (!existingAdmin) {
     console.log("Seeding Users...");
     const adminPasswordHash = await hashPassword("Admin@123");
@@ -62,7 +62,7 @@ async function seed() {
     await userColl.insertMany([
       {
         name: "Rajesh Sharma (Admin)",
-        email: "admin@kayra.com",
+        email: "admin@kyra.com",
         passwordHash: adminPasswordHash,
         role: "admin",
         phone: "+91 98112 34567",
@@ -72,7 +72,7 @@ async function seed() {
       },
       {
         name: "Pooja Verma (Manager)",
-        email: "manager@kayra.com",
+        email: "manager@kyra.com",
         passwordHash: managerPasswordHash,
         role: "manager",
         phone: "+91 98112 88899",
@@ -82,7 +82,7 @@ async function seed() {
       },
       {
         name: "Amit Kumar (Billing Staff)",
-        email: "staff@kayra.com",
+        email: "staff@kyra.com",
         passwordHash: staffPasswordHash,
         role: "billing_staff",
         phone: "+91 98112 55544",

@@ -4,21 +4,23 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  FileText,
   Printer,
   Download,
   CreditCard,
   Ban,
   ArrowLeft,
-  Building2,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
   Share2,
+  Edit2,
+  Trash2,
+  Eye,
+  History,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { generateInvoicePdf } from "@/lib/pdf";
 import { generateUpiQrDataUrl } from "@/lib/qrcode";
+import { KyraBadge } from "@/components/ui/kyra-ui";
 import { toast } from "sonner";
 
 export default function InvoiceDetailsPage() {
@@ -27,81 +29,112 @@ export default function InvoiceDetailsPage() {
   const id = params?.id as string;
 
   const [invoice, setInvoice] = useState<any>(null);
+  const [revisions, setRevisions] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string>("billing_staff");
   const [loading, setLoading] = useState(true);
   const [upiQrUrl, setUpiQrUrl] = useState<string>("");
 
-  // Modals
+  // PDF Preview Modal
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+
+  // Payment Modal
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [payAmount, setPayAmount] = useState("");
-  const [payMode, setPayMode] = useState<"cash" | "upi" | "bank_transfer" | "card" | "credit">("cash");
+  const [payMode, setPayMode] = useState<
+    "cash" | "upi" | "bank_transfer" | "card" | "credit" | "other"
+  >("cash");
   const [payRef, setPayRef] = useState("");
   const [payNotes, setPayNotes] = useState("");
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
+  // Cancel & Delete Modals
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [submittingCancel, setSubmittingCancel] = useState(false);
 
-  const fetchInvoice = async () => {
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [submittingDelete, setSubmittingDelete] = useState(false);
+
+  const fetchInvoiceData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/invoices/${id}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Failed to load invoice");
+      const [invRes, revRes, meRes] = await Promise.all([
+        fetch(`/api/invoices/${id}`),
+        fetch(`/api/invoices/${id}/revisions`),
+        fetch("/api/auth/me"),
+      ]);
+      const data = await invRes.json();
+      const revData = await revRes.json();
+      const meData = await meRes.json();
+
+      if (!invRes.ok || !data.success) throw new Error(data.error || "Failed to load invoice");
+
       setInvoice(data.invoice);
       setPayAmount(String(data.invoice.balanceDue || 0));
+      if (revData.success) setRevisions(revData.revisions || []);
+      if (meData?.user?.role) setUserRole(meData.user.role);
 
       if (data.invoice.seller?.upiId) {
+        const targetAmt =
+          data.invoice.balanceDue > 0 ? data.invoice.balanceDue : data.invoice.grandTotal;
         generateUpiQrDataUrl({
           upiId: data.invoice.seller.upiId,
-          payeeName: data.invoice.seller.businessName || "KYRA ENTERPRISES",
-          amount: data.invoice.grandTotal,
+          payeeName: data.invoice.seller.businessName || "Kyra Enterprises",
+          amount: targetAmt,
           note: `Inv ${data.invoice.invoiceNumber}`,
         })
           .then(setUpiQrUrl)
           .catch(() => {});
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error loading invoice";
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : "Error loading invoice");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (id) fetchInvoice();
+    if (id) fetchInvoiceData();
   }, [id]);
+
+  const handlePreviewPdf = async () => {
+    if (!invoice) return;
+    try {
+      const blob = (await generateInvoicePdf(invoice, "blob")) as Blob;
+      const objUrl = URL.createObjectURL(blob);
+      setPdfPreviewUrl(objUrl);
+    } catch {
+      toast.error("Failed to generate PDF preview");
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (!invoice) return;
     try {
-      await generateInvoicePdf(invoice);
-      toast.success("PDF downloaded successfully");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF");
+      await generateInvoicePdf(invoice, "save");
+      toast.success("A4 GST Tax Invoice PDF downloaded");
+    } catch {
+      toast.error("Failed to download PDF");
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleShare = async () => {
+    if (!invoice) return;
+    const shareText = `Kyra Enterprises Tax Invoice #${invoice.invoiceNumber} — Total: ${formatCurrency(
+      invoice.grandTotal
+    )}, Balance Due: ${formatCurrency(invoice.balanceDue)}`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Invoice ${invoice.invoiceNumber} - ${invoice.seller.businessName}`,
-          text: `Invoice #${invoice.invoiceNumber} for ${formatCurrency(invoice.grandTotal)}`,
+          title: `Invoice ${invoice.invoiceNumber} - Kyra Enterprises`,
+          text: shareText,
           url: window.location.href,
         });
-      } catch {
-        // ignore
-      }
+      } catch {}
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Invoice URL copied to clipboard");
+      navigator.clipboard.writeText(`${shareText} — ${window.location.href}`);
+      toast.success("Invoice summary & link copied to clipboard");
     }
   };
 
@@ -125,16 +158,20 @@ export default function InvoiceDetailsPage() {
           notes: payNotes,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to record payment");
 
-      toast.success("Payment recorded successfully");
+      toast.success(
+        data.invoice?.balanceDue === 0
+          ? "Full balance settled! Automatic payment reminders stopped."
+          : "Partial payment recorded! Remaining balance updated."
+      );
       setIsPaymentOpen(false);
-      fetchInvoice();
+      setPayRef("");
+      setPayNotes("");
+      fetchInvoiceData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error recording payment";
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : "Error recording payment");
     } finally {
       setSubmittingPayment(false);
     }
@@ -142,33 +179,51 @@ export default function InvoiceDetailsPage() {
 
   const handleCancelInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cancelReason) {
-      toast.error("Please provide a reason for cancellation");
+    if (!cancelReason.trim()) {
+      toast.error("Please enter a cancellation reason");
       return;
     }
-
     try {
       setSubmittingCancel(true);
       const res = await fetch(`/api/invoices/${invoice._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "cancel",
-          reason: cancelReason,
-        }),
+        body: JSON.stringify({ action: "cancel", reason: cancelReason.trim() }),
       });
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to cancel invoice");
-
-      toast.success("Invoice cancelled. Stock restored to warehouse.");
+      if (!res.ok) throw new Error(data.error || "Cancellation failed");
+      toast.success("Invoice cancelled; stock restored and reminders stopped.");
       setIsCancelOpen(false);
-      fetchInvoice();
+      fetchInvoiceData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error cancelling invoice";
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : "Error cancelling invoice");
     } finally {
       setSubmittingCancel(false);
+    }
+  };
+
+  const handleSoftDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteReason.trim() || deleteReason.trim().length < 3) {
+      toast.error("Please enter a valid deletion reason");
+      return;
+    }
+    try {
+      setSubmittingDelete(true);
+      const res = await fetch(`/api/invoices/${invoice._id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: deleteReason.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Deletion failed");
+      toast.success(data.message || "Invoice soft-deleted");
+      setIsDeleteOpen(false);
+      router.push("/invoices");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Error deleting invoice");
+    } finally {
+      setSubmittingDelete(false);
     }
   };
 
@@ -176,542 +231,587 @@ export default function InvoiceDetailsPage() {
     return (
       <div className="py-24 text-center text-slate-400">
         <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs font-medium">Loading Tax Invoice...</p>
+        <p className="text-xs font-medium">Loading GST Tax Invoice...</p>
       </div>
     );
   }
 
   if (!invoice) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-sm font-semibold text-slate-700">Invoice not found</p>
-        <Link href="/invoices" className="text-xs text-emerald-600 hover:underline mt-2 inline-block">
-          Return to Invoice Listing
+      <div className="py-20 text-center text-xs">
+        <p className="font-semibold text-slate-700">Invoice not found</p>
+        <Link href="/invoices" className="text-emerald-600 hover:underline mt-2 inline-block">
+          &larr; Return to All Invoices
         </Link>
       </div>
     );
   }
 
   const isCancelled = invoice.status === "cancelled";
-  const isPaid = invoice.paymentStatus === "paid";
-  const isPartial = invoice.paymentStatus === "partial";
-  const totalQty = invoice.items.reduce((acc: number, it: any) => acc + (it.quantity || 0), 0);
-
-  // Group by HSN for tax summary table
-  const hsnMap: { [key: string]: { taxable: number; tax: number; cgst: number; sgst: number; igst: number } } = {};
-  for (const it of invoice.items) {
-    const h = it.hsnCode || "General";
-    if (!hsnMap[h]) {
-      hsnMap[h] = { taxable: 0, tax: 0, cgst: 0, sgst: 0, igst: 0 };
-    }
-    hsnMap[h].taxable += it.taxableAmount;
-    hsnMap[h].tax += it.totalTax;
-    hsnMap[h].cgst += it.cgstAmount;
-    hsnMap[h].sgst += it.sgstAmount;
-    hsnMap[h].igst += it.igstAmount;
-  }
+  const isDeleted = invoice.isDeleted || invoice.status === "deleted";
+  const sellerName = invoice.seller?.businessName || "Kyra Enterprises";
 
   return (
     <div className="space-y-6">
-      {/* Top Action Bar (Hidden in Print) */}
-      <div className="no-print print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+      {/* Top Action Bar (Hidden on Print) */}
+      <div className="no-print print:hidden flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/invoices"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-            title="Back to Invoices"
+            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-slate-900">{invoice.invoiceNumber}</h1>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                  isCancelled
-                    ? "bg-red-100 text-red-700 border border-red-200"
-                    : isPaid
-                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                    : isPartial
-                    ? "bg-amber-100 text-amber-700 border border-amber-200"
-                    : "bg-slate-100 text-slate-700 border border-slate-200"
-                }`}
+              <h1 className="text-xl font-bold text-slate-900 font-mono">
+                {invoice.invoiceNumber}
+              </h1>
+              <KyraBadge
+                tone={
+                  isDeleted || isCancelled
+                    ? "red"
+                    : invoice.paymentStatus === "paid"
+                    ? "emerald"
+                    : invoice.paymentStatus === "overdue"
+                    ? "red"
+                    : invoice.paymentStatus === "partial"
+                    ? "blue"
+                    : "amber"
+                }
               >
-                {isCancelled ? "Cancelled" : invoice.paymentStatus}
-              </span>
+                {isDeleted
+                  ? "Soft-Deleted"
+                  : isCancelled
+                  ? "Cancelled"
+                  : invoice.paymentStatus === "partial"
+                  ? "Partially Paid"
+                  : invoice.paymentStatus}
+              </KyraBadge>
+              {invoice.revisionNumber > 1 && (
+                <KyraBadge tone="purple">Revision #{invoice.revisionNumber}</KyraBadge>
+              )}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Issued on {formatDate(invoice.invoiceDate)} • Created by {invoice.createdBy?.userName || "Admin"}
+            <p className="text-xs text-slate-500 mt-0.5">
+              Billed to <strong>{invoice.customer?.name}</strong> on{" "}
+              {formatDate(invoice.invoiceDate)}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {!isCancelled && invoice.balanceDue > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {!isCancelled && !isDeleted && invoice.balanceDue > 0 && (
             <button
               onClick={() => setIsPaymentOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-xs"
             >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Record Payment</span>
+              <CreditCard className="w-4 h-4" />
+              <span>Record Payment ({formatCurrency(invoice.balanceDue)} Due)</span>
             </button>
           )}
 
           <button
-            onClick={handleDownloadPdf}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs"
+            onClick={handlePreviewPdf}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Eye className="w-4 h-4 text-emerald-600" />
+            <span>Preview PDF</span>
+          </button>
+
+          <button
+            onClick={handleDownloadPdf}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0e1e32] hover:bg-[#142a45] text-white font-semibold"
+          >
+            <Download className="w-4 h-4 text-emerald-400" />
             <span>Download PDF</span>
           </button>
 
           <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold"
           >
-            <Printer className="w-3.5 h-3.5" />
+            <Printer className="w-4 h-4" />
             <span>Print</span>
           </button>
 
           <button
             onClick={handleShare}
-            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs"
-            title="Share"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Share2 className="w-4 h-4" />
+            <span>Share</span>
           </button>
 
-          {!isCancelled && (
+          {!isCancelled && !isDeleted && userRole !== "billing_staff" && (
+            <Link
+              href={`/invoices/${invoice._id}/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-semibold"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Edit Invoice</span>
+            </Link>
+          )}
+
+          {!isCancelled && !isDeleted && userRole !== "billing_staff" && (
             <button
               onClick={() => setIsCancelOpen(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-medium border border-red-200"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold"
             >
               <Ban className="w-3.5 h-3.5" />
-              <span>Cancel Invoice</span>
+              <span>Cancel</span>
+            </button>
+          )}
+
+          {!isDeleted && userRole === "admin" && (
+            <button
+              onClick={() => setIsDeleteOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-semibold"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Cancelled Banner if applicable */}
-      {isCancelled && (
-        <div className="no-print print:hidden p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-          <div className="text-xs">
-            <span className="font-bold">This invoice has been CANCELLED</span>
-            <p className="mt-0.5 text-red-700">
-              Reason: {invoice.cancellationReason || "No reason given"} • Cancelled by{" "}
-              {invoice.cancelledBy?.userName || "Staff"} on {formatDateTime(invoice.cancelledAt)}
-            </p>
+      {/* Soft-Deleted / Cancelled Audit Banner */}
+      {(isDeleted || isCancelled) && (
+        <div className="no-print p-4 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
+          <div className="font-bold uppercase">
+            {isDeleted ? "Soft-Deleted Financial Record (Archived)" : "Cancelled Tax Invoice"}
           </div>
+          {isDeleted && (
+            <div>
+              Deleted by <strong>{invoice.deletedBy?.userName || "Admin"}</strong> on{" "}
+              {formatDateTime(invoice.deletedAt)} &bull; Reason:{" "}
+              <strong>{invoice.deletionReason}</strong>
+            </div>
+          )}
+          {isCancelled && (
+            <div>
+              Cancelled by <strong>{invoice.cancelledBy?.userName || "Manager"}</strong> on{" "}
+              {formatDateTime(invoice.cancelledAt)} &bull; Reason:{" "}
+              <strong>{invoice.cancellationReason}</strong>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Printable Invoice matching the requested Proforma/Tax Invoice design */}
-      <div
-        id="printable-invoice"
-        className="printable-invoice bg-white border border-[#E2D7CF] rounded-xl p-6 sm:p-10 shadow-sm max-w-4xl mx-auto text-slate-800 print:border-none print:p-0 print:shadow-none print:w-full print:max-w-none print:m-0 space-y-4"
-      >
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg overflow-hidden bg-slate-900 border border-slate-700 shrink-0">
-                <img
-                  src="/logo.jpeg"
-                  alt={invoice.seller.businessName}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = "none";
-                  }}
-                />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#8B1E1E] tracking-tight">
-                {invoice.seller.businessName}
-              </h1>
+      {/* Printable A4 GST TAX INVOICE Document */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 max-w-4xl mx-auto print:shadow-none print:border-none print:p-2 print:max-w-none">
+        {/* Seller Brand Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b-2 border-[#0e1e32]">
+          <div className="flex items-start gap-3.5">
+            <img
+              src={invoice.seller?.logoUrl || "/logo.jpeg"}
+              alt={sellerName}
+              className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+              onError={(e) => ((e.target as HTMLElement).style.display = "none")}
+            />
+            <div>
+              <h2 className="text-xl font-extrabold text-[#0e1e32] tracking-tight">{sellerName}</h2>
+              <p className="text-xs text-slate-600 mt-0.5">
+                {invoice.seller?.address}, {invoice.seller?.city}, {invoice.seller?.state} (
+                {invoice.seller?.stateCode}) &ndash; {invoice.seller?.pincode}
+              </p>
+              <p className="text-xs font-mono font-bold text-emerald-700 mt-1">
+                GSTIN: {invoice.seller?.gstin || "N/A"}
+              </p>
             </div>
-            <p className="text-[11px] font-medium text-[#8B1E1E]/90 pl-0.5">
-              Quality Electrical & Home Appliances • Wholesale & Retail Solutions
-            </p>
           </div>
 
-          <div className="text-right text-xs space-y-0.5 sm:max-w-xs">
-            <div className="font-bold text-slate-900">{invoice.seller.businessName}</div>
-            <div className="text-slate-600 text-[11px]">
-              Registered Enterprise, {invoice.seller.address}, {invoice.seller.city}, {invoice.seller.state} - {invoice.seller.pincode || "847223"}
+          <div className="text-left sm:text-right text-xs space-y-0.5">
+            <div className="inline-block px-3 py-1 rounded-md bg-[#0e1e32] text-white font-bold tracking-wider uppercase text-[11px] mb-1">
+              TAX INVOICE
             </div>
-            <div className="text-slate-600 text-[11px]">
-              GSTIN: <span className="font-mono font-semibold text-slate-800">{invoice.seller.gstin}</span> | Contact: {invoice.seller.phone}
-            </div>
-            <div className="text-slate-600 text-[11px]">
-              Email: <span className="text-slate-700">{invoice.seller.email}</span>
-            </div>
+            <div className="text-slate-600">Phone: {invoice.seller?.phone}</div>
+            <div className="text-slate-600">Email: {invoice.seller?.email}</div>
           </div>
         </div>
 
-        {/* Maroon Accent Divider */}
-        <div className="border-b-2 border-[#8B1E1E]" />
-
-        {/* Centered Document Title */}
-        <div className="text-center py-1">
-          <h2 className="text-base sm:text-lg font-bold text-[#8B1E1E] tracking-[0.25em] uppercase">
-            P R O F O R M A &nbsp; I N V O I C E
-          </h2>
-        </div>
-
-        {/* Two Column Cards: INVOICE DETAILS & REFERENCE & SUPPLY */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {/* Invoice Details Box */}
-          <div className="border border-[#E2D7CF] rounded-lg p-3 bg-white space-y-1.5 text-xs">
-            <div className="text-[10px] font-bold text-[#8B1E1E] uppercase tracking-wider">
-              INVOICE DETAILS
+        {/* Buyer & Invoice Metadata */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-b border-slate-200 text-xs">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Billed To (Customer)
             </div>
-            <div className="flex items-center justify-between py-0.5">
-              <span className="text-slate-500">Invoice No:</span>
-              <span className="font-bold font-mono text-slate-900">{invoice.invoiceNumber}</span>
+            <div className="font-bold text-sm text-slate-900">
+              {invoice.customer?.businessName || invoice.customer?.name}
             </div>
-            <div className="flex items-center justify-between py-0.5">
+            <div className="text-slate-600">{invoice.customer?.billingAddress}</div>
+            <div className="text-slate-600">
+              State: <strong>{invoice.customer?.state}</strong> ({invoice.customer?.stateCode})
+              &bull; Ph: {invoice.customer?.phone}
+            </div>
+            <div className="font-mono font-bold text-slate-800">
+              Customer GSTIN: {invoice.customer?.gstin || "Unregistered"}
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Invoice Details
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Invoice Number:</span>
+              <span className="font-mono font-bold text-slate-900">{invoice.invoiceNumber}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-slate-500">Invoice Date:</span>
-              <span className="font-bold text-slate-900">{formatDate(invoice.invoiceDate)}</span>
+              <span className="font-mono font-semibold">{formatDate(invoice.invoiceDate)}</span>
             </div>
-          </div>
-
-          {/* Reference & Supply Box */}
-          <div className="border border-[#E2D7CF] rounded-lg p-3 bg-white space-y-1.5 text-xs">
-            <div className="text-[10px] font-bold text-[#8B1E1E] uppercase tracking-wider">
-              REFERENCE & SUPPLY
-            </div>
-            <div className="flex items-center justify-between py-0.5">
-              <span className="text-slate-500">Place of Supply:</span>
-              <span className="font-bold text-slate-900">
-                {invoice.customer.state} ({invoice.customer.stateCode})
+            <div className="flex justify-between">
+              <span className="text-slate-500">Payment Due Date:</span>
+              <span className="font-mono font-semibold">
+                {invoice.dueDate ? formatDate(invoice.dueDate) : "Immediate"}
               </span>
             </div>
-            <div className="flex items-center justify-between py-0.5">
-              <span className="text-slate-500">Client / Order Ref:</span>
-              <span className="font-bold text-slate-900">
-                {invoice.paymentStatus.toUpperCase()} / {invoice.payments?.[0]?.paymentMode?.toUpperCase() || "OFFLINE"}
+            <div className="flex justify-between">
+              <span className="text-slate-500">GST Regime:</span>
+              <span className="font-semibold text-emerald-700">
+                {invoice.isInterState ? "Inter-State (IGST)" : "Intra-State (CGST + SGST)"}
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Client Details Box */}
-        <div className="border border-[#E2D7CF] rounded-lg p-3.5 bg-white text-xs space-y-2">
-          <div className="text-[10px] font-bold text-[#8B1E1E] uppercase tracking-wider">
-            CLIENT DETAILS & BILLING COMPOSITION
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div className="space-y-0.5 max-w-lg">
-              <div className="font-bold text-sm text-slate-900">
-                {invoice.customer.businessName || invoice.customer.name}
-              </div>
-              <div className="text-slate-600 text-[11px] leading-relaxed">
-                {invoice.customer.billingAddress}
-              </div>
-              {invoice.customer.gstin && (
-                <div className="text-[11px] text-slate-700 font-mono pt-0.5">
-                  GSTIN: <span className="font-semibold">{invoice.customer.gstin}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="text-right text-xs space-y-1 shrink-0">
-              <div>
-                <span className="text-slate-500">Email: </span>
-                <span className="font-semibold text-slate-800">{invoice.customer.email || "N/A"}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">Mobile: </span>
-                <span className="font-semibold text-slate-800 font-mono">{invoice.customer.phone || "N/A"}</span>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Line Items Table */}
-        <div className="border border-[#E2D7CF] rounded-lg overflow-hidden text-xs bg-white">
-          <table className="w-full text-left border-collapse">
+        <div className="py-4 overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-[#FAF4EF] text-[#8B1E1E] border-b border-[#E2D7CF] font-bold text-[11px] tracking-wide">
-                <th className="py-2.5 px-3">PRODUCT DESCRIPTION</th>
-                <th className="py-2.5 px-3 text-center">HSN/SAC</th>
-                <th className="py-2.5 px-3 text-center">QTY</th>
-                <th className="py-2.5 px-3 text-right">RATE (₹)</th>
-                <th className="py-2.5 px-3 text-right">TOTAL (₹)</th>
+              <tr className="bg-[#0e1e32] text-white">
+                <th className="py-2.5 px-3">#</th>
+                <th className="py-2.5 px-3">Product Description</th>
+                <th className="py-2.5 px-3 text-center">HSN</th>
+                <th className="py-2.5 px-3 text-center">Qty</th>
+                <th className="py-2.5 px-3 text-right">Rate</th>
+                <th className="py-2.5 px-3 text-right">Disc.</th>
+                <th className="py-2.5 px-3 text-right">Taxable</th>
+                <th className="py-2.5 px-3 text-center">GST %</th>
+                {invoice.isInterState ? (
+                  <th className="py-2.5 px-3 text-right">IGST</th>
+                ) : (
+                  <>
+                    <th className="py-2.5 px-3 text-right">CGST</th>
+                    <th className="py-2.5 px-3 text-right">SGST</th>
+                  </>
+                )}
+                <th className="py-2.5 px-3 text-right">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2D7CF]/60 text-slate-800">
-              {invoice.items.map((it: any, idx: number) => (
-                <tr key={idx} className="hover:bg-[#FAF4EF]/30 transition-colors">
+            <tbody className="divide-y divide-slate-200 border-b border-slate-200">
+              {(invoice.items || []).map((it: any, idx: number) => (
+                <tr key={idx}>
+                  <td className="py-2.5 px-3 font-mono text-slate-500">{idx + 1}</td>
                   <td className="py-2.5 px-3">
                     <div className="font-semibold text-slate-900">{it.productName}</div>
-                    {it.sku && <div className="text-[10px] text-slate-400 font-mono">SKU: {it.sku}</div>}
+                    <div className="text-[10px] font-mono text-slate-400">{it.sku}</div>
                   </td>
-                  <td className="py-2.5 px-3 text-center font-mono text-slate-600 text-[11px]">
-                    {it.hsnCode}
+                  <td className="py-2.5 px-3 text-center font-mono">{it.hsnCode}</td>
+                  <td className="py-2.5 px-3 text-center font-mono font-bold">
+                    {it.quantity} {it.uom}
                   </td>
-                  <td className="py-2.5 px-3 text-center font-semibold text-slate-800">
-                    {it.quantity}
+                  <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(it.rate)}</td>
+                  <td className="py-2.5 px-3 text-right font-mono">
+                    {formatCurrency(it.discount || 0)}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-slate-800">
-                    {formatCurrency(it.rate)}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                  <td className="py-2.5 px-3 text-right font-mono">
                     {formatCurrency(it.taxableAmount)}
+                  </td>
+                  <td className="py-2.5 px-3 text-center font-mono">{it.gstRate}%</td>
+                  {invoice.isInterState ? (
+                    <td className="py-2.5 px-3 text-right font-mono">
+                      {formatCurrency(it.igstAmount)}
+                    </td>
+                  ) : (
+                    <>
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        {formatCurrency(it.cgstAmount)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        {formatCurrency(it.sgstAmount)}
+                      </td>
+                    </>
+                  )}
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                    {formatCurrency(it.totalAmount)}
                   </td>
                 </tr>
               ))}
-
-              {/* Subtotal */}
-              <tr className="border-t border-[#E2D7CF] bg-white">
-                <td colSpan={4} className="py-2 px-3 text-right font-medium text-slate-600">
-                  Subtotal
-                </td>
-                <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
-                  {formatCurrency(invoice.taxableAmount)}
-                </td>
-              </tr>
-
-              {/* Tax Details (CGST + SGST or IGST) */}
-              {invoice.isInterState ? (
-                <tr className="bg-white">
-                  <td colSpan={4} className="py-1.5 px-3 text-right font-medium text-slate-600">
-                    IGST (18%)
-                  </td>
-                  <td className="py-1.5 px-3 text-right font-mono text-slate-800">
-                    + {formatCurrency(invoice.totalIgst)}
-                  </td>
-                </tr>
-              ) : (
-                <>
-                  <tr className="bg-white">
-                    <td colSpan={4} className="py-1 px-3 text-right font-medium text-slate-600">
-                      CGST (9%)
-                    </td>
-                    <td className="py-1 px-3 text-right font-mono text-slate-800">
-                      + {formatCurrency(invoice.totalCgst)}
-                    </td>
-                  </tr>
-                  <tr className="bg-white">
-                    <td colSpan={4} className="py-1 px-3 text-right font-medium text-slate-600">
-                      SGST (9%)
-                    </td>
-                    <td className="py-1 px-3 text-right font-mono text-slate-800">
-                      + {formatCurrency(invoice.totalSgst)}
-                    </td>
-                  </tr>
-                </>
-              )}
-
-              {invoice.roundOff !== 0 && (
-                <tr className="bg-white">
-                  <td colSpan={4} className="py-1 px-3 text-right font-medium text-slate-600">
-                    Round Off
-                  </td>
-                  <td className="py-1 px-3 text-right font-mono text-slate-800">
-                    {invoice.roundOff > 0 ? `+ ${formatCurrency(invoice.roundOff)}` : formatCurrency(invoice.roundOff)}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
-
-          {/* Highlighted Total Payable Amount Bar */}
-          <div className="bg-[#F8ECE8] border-t-2 border-[#E2D7CF] py-2.5 px-4 flex items-center justify-between">
-            <span className="font-bold text-sm text-[#8B1E1E] uppercase tracking-wide">
-              Total Payable Amount
-            </span>
-            <span className="font-bold text-base sm:text-lg text-[#8B1E1E] font-mono">
-              {formatCurrency(invoice.grandTotal)}
-            </span>
-          </div>
         </div>
 
-        {/* Net Payable Note in words */}
-        <div className="text-xs font-medium text-slate-700 italic px-1">
-          Net Payable to {invoice.seller.businessName}: <strong className="font-bold text-slate-900 not-italic">Rs. {invoice.amountInWords}</strong>
-        </div>
-
-        {/* Banking Settlement vs Pay Via UPI QR Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
-          {/* Banking Details Box (2 Columns) */}
-          <div className="sm:col-span-2 border border-[#E2D7CF] rounded-lg p-3.5 bg-white text-xs space-y-2">
-            <div className="text-[10px] font-bold text-[#8B1E1E] uppercase tracking-wider mb-1.5">
-              BANKING & PAYMENT SETTLEMENT
-            </div>
-            <div className="grid grid-cols-3 gap-y-1.5 text-[11px]">
-              <span className="text-slate-500">In Favour of:</span>
-              <span className="col-span-2 font-bold text-slate-900">
-                {invoice.seller.bankDetails.accountHolder || invoice.seller.businessName}
-              </span>
-
-              <span className="text-slate-500">Bank Name:</span>
-              <span className="col-span-2 font-bold text-slate-900">
-                {invoice.seller.bankDetails.bankName}
-              </span>
-
-              <span className="text-slate-500">Current / Settlement A/C:</span>
-              <span className="col-span-2 font-bold font-mono text-slate-900">
-                {invoice.seller.bankDetails.accountNumber}
-              </span>
-
-              <span className="text-slate-500">IFSC Code:</span>
-              <span className="col-span-2 font-bold font-mono text-slate-900">
-                {invoice.seller.bankDetails.ifscCode}
-              </span>
-
-              <span className="text-slate-500">UPI ID:</span>
-              <span className="col-span-2 font-bold font-mono text-[#8B1E1E]">
-                {invoice.seller.upiId || "N/A"}
-              </span>
-
-              <span className="text-slate-500">Branch:</span>
-              <span className="col-span-2 font-semibold text-slate-800">
-                {invoice.seller.bankDetails.branch || "Madhubani"}
-              </span>
-            </div>
-          </div>
-
-          {/* Pay Via UPI QR Code Box (1 Column) */}
-          <div className="border border-[#E2D7CF] rounded-lg p-3 bg-white flex flex-col items-center justify-center text-center">
-            <div className="text-[10px] font-bold text-[#8B1E1E] uppercase tracking-wider mb-2">
-              PAY VIA UPI
-            </div>
-
-            {upiQrUrl ? (
-              <div className="w-28 h-28 border border-slate-200 rounded-md p-1 bg-white shadow-2xs">
-                <img src={upiQrUrl} alt="Scan & Pay via UPI" className="w-full h-full object-contain" />
+        {/* Totals + Bank & UPI QR */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-xs">
+          <div className="space-y-3">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="text-[10px] font-bold uppercase text-slate-400 mb-1">
+                Amount in Words
               </div>
-            ) : (
-              <div className="w-28 h-28 border border-dashed border-slate-300 rounded-md flex items-center justify-center text-[10px] text-slate-400">
-                UPI QR Ready
+              <div className="font-semibold italic text-slate-900">{invoice.amountInWords}</div>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold uppercase text-[#0e1e32]">
+                  Bank &amp; UPI Settlement
+                </div>
+                <div>
+                  Bank: <strong>{invoice.seller?.bankDetails?.bankName || "N/A"}</strong>
+                </div>
+                <div className="font-mono">
+                  A/C: {invoice.seller?.bankDetails?.accountNumber || "N/A"} | IFSC:{" "}
+                  {invoice.seller?.bankDetails?.ifscCode || "N/A"}
+                </div>
+                <div className="font-mono text-emerald-700">
+                  UPI: {invoice.seller?.upiId || "N/A"}
+                </div>
+              </div>
+              {upiQrUrl && (
+                <img
+                  src={upiQrUrl}
+                  alt="UPI QR"
+                  className="w-20 h-20 border border-slate-200 rounded-lg p-1 shrink-0"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="flex justify-between text-slate-600">
+              <span>Taxable Amount</span>
+              <span className="font-mono">{formatCurrency(invoice.taxableAmount)}</span>
+            </div>
+            {invoice.totalDiscount > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span>Discount</span>
+                <span className="font-mono">-{formatCurrency(invoice.totalDiscount)}</span>
               </div>
             )}
-
-            <div className="mt-2 text-[10px] font-bold text-slate-800 tracking-wider uppercase">
-              SCAN & PAY WITH ANY UPI APP
+            {invoice.isInterState ? (
+              <div className="flex justify-between text-slate-600">
+                <span>Total IGST</span>
+                <span className="font-mono">+{formatCurrency(invoice.totalIgst)}</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between text-slate-600">
+                  <span>Total CGST</span>
+                  <span className="font-mono">+{formatCurrency(invoice.totalCgst)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Total SGST</span>
+                  <span className="font-mono">+{formatCurrency(invoice.totalSgst)}</span>
+                </div>
+              </>
+            )}
+            {invoice.roundOff !== 0 && (
+              <div className="flex justify-between text-slate-500">
+                <span>Round Off</span>
+                <span className="font-mono">{Number(invoice.roundOff).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="pt-2 border-t border-slate-300 flex justify-between text-base font-bold text-[#0e1e32]">
+              <span>Grand Total</span>
+              <span className="font-mono">{formatCurrency(invoice.grandTotal)}</span>
             </div>
-            <div className="text-[9px] text-slate-500 mt-0.5">
-              G Pay • PhonePe • Paytm • BHIM
+            <div className="flex justify-between text-emerald-700 font-semibold">
+              <span>Amount Paid</span>
+              <span className="font-mono">{formatCurrency(invoice.amountPaid)}</span>
+            </div>
+            <div className="flex justify-between text-amber-700 font-bold">
+              <span>Remaining Balance</span>
+              <span className="font-mono">{formatCurrency(invoice.balanceDue)}</span>
             </div>
           </div>
         </div>
 
-        {/* Policies & Dispatch Terms */}
-        <div className="pt-2 text-xs space-y-1 text-slate-600">
-          <div className="text-[10px] font-bold text-[#8B1E1E] uppercase tracking-wider">
-            POLICIES & DISPATCH TERMS
-          </div>
-          <ul className="text-[10px] sm:text-[11px] space-y-1 text-slate-600 list-disc pl-4 leading-relaxed">
-            <li>100% Genuine Certified Goods sourced directly with authentic manufacturer warranty.</li>
-            <li>This Proforma/Tax Invoice acts as an official billing and quotation record.</li>
-            <li>Payments due within 5 days of Invoice date. Interest @18% p.a. charged on overdue bills.</li>
-            <li>Primary responsibility for repair or replacement lies under manufacturer warranty terms.</li>
-            <li>Burnt, physical breakage, or liquid damage are not covered under company warranty.</li>
-            <li>Subject exclusively to the legal jurisdiction of Madhubani / Patna, Bihar courts.</li>
-          </ul>
-        </div>
-
-        {/* Thank You Note & Business Footer */}
-        <div className="pt-3 border-t border-[#8B1E1E] text-center space-y-0.5 text-xs">
-          <div className="font-bold text-[#8B1E1E] tracking-wider uppercase text-[11px]">
-            THANK YOU FOR SUPPORTING {invoice.seller.businessName.toUpperCase()}
-          </div>
-          <div className="text-[10px] text-slate-500">
-            {invoice.seller.businessName} • {invoice.seller.address}, {invoice.seller.city}, {invoice.seller.state} | {invoice.seller.email}
-          </div>
-          <div className="text-[9px] text-slate-400 pt-0.5">
-            This is a Computer Generated Commercial Invoice
+        {/* Terms & Signatory */}
+        <div className="mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between gap-4 text-[11px] text-slate-500">
+          <div className="whitespace-pre-line max-w-xl">{invoice.termsAndConditions}</div>
+          <div className="text-right shrink-0">
+            <div className="font-bold text-slate-900">For {sellerName}</div>
+            <div className="mt-8 text-slate-400">Authorized Signatory</div>
           </div>
         </div>
       </div>
 
+      {/* Payment History & Audit Revision History (Hidden on Print) */}
+      <div className="no-print print:hidden grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-4xl mx-auto">
+        {/* Payments Recorded on this Invoice */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs space-y-3 text-xs">
+          <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-emerald-600" />
+            <span>Payment Transactions ({invoice.payments?.length || 0})</span>
+          </h3>
+          {!invoice.payments || invoice.payments.length === 0 ? (
+            <p className="text-slate-400 py-4">No payments recorded yet on this invoice.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {invoice.payments.map((p: any, i: number) => (
+                <div key={i} className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-slate-800 uppercase text-[11px]">
+                      {String(p.paymentMode || "cash").replace("_", " ")}
+                      {p.transactionRef ? ` • Ref: ${p.transactionRef}` : ""}
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      {formatDateTime(p.paymentDate)}
+                    </div>
+                  </div>
+                  <div className="font-mono font-bold text-emerald-600">
+                    +{formatCurrency(p.amount)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Historical Revisions / Audit Trail */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs space-y-3 text-xs">
+          <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+            <History className="w-4 h-4 text-blue-600" />
+            <span>Invoice Revision &amp; Audit History ({revisions.length})</span>
+          </h3>
+          {revisions.length === 0 ? (
+            <p className="text-slate-400 py-4">
+              Original issued version (Revision #1 &mdash; no amendments recorded).
+            </p>
+          ) : (
+            <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+              {revisions.map((rev: any) => (
+                <div key={rev._id} className="py-2.5 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 uppercase text-[11px]">
+                      Rev #{rev.revisionNumber} &bull; {rev.changeType.replace("_", " ")}
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">
+                      {formatDateTime(rev.createdAt)}
+                    </span>
+                  </div>
+                  <div className="text-slate-600">Reason: {rev.reason}</div>
+                  <div className="text-[11px] text-slate-400">
+                    By {rev.changedBy?.userName || "Admin"} &bull; Previous Total:{" "}
+                    {formatCurrency(rev.previousSnapshot?.grandTotal || 0)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PDF Preview Modal */}
+      {pdfPreviewUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs no-print">
+          <div className="bg-white rounded-2xl w-full max-w-4xl h-[88vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="px-5 py-3 bg-[#0e1e32] text-white flex items-center justify-between text-xs">
+              <span className="font-bold">
+                Kyra Enterprises &mdash; PDF Preview ({invoice.invoiceNumber})
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadPdf}
+                  className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 font-semibold"
+                >
+                  Download PDF
+                </button>
+                <button
+                  onClick={() => {
+                    URL.revokeObjectURL(pdfPreviewUrl);
+                    setPdfPreviewUrl(null);
+                  }}
+                  className="p-1 rounded hover:bg-slate-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <iframe src={pdfPreviewUrl} title="Invoice PDF Preview" className="flex-1 w-full" />
+          </div>
+        </div>
+      )}
+
       {/* Record Payment Modal */}
       {isPaymentOpen && (
-        <div className="no-print print:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs no-print">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <h2 className="text-base font-bold text-slate-900">Record Invoice Payment</h2>
+            <h3 className="text-base font-bold text-slate-900">Record Invoice Payment</h3>
             <p className="text-xs text-slate-500 mt-0.5 mb-4">
-              Apply customer payment against invoice #{invoice.invoiceNumber}
+              Supports partial or full settlement. Remaining balance:{" "}
+              <strong className="text-slate-900">{formatCurrency(invoice.balanceDue)}</strong>
             </p>
 
-            <form onSubmit={handleRecordPayment} className="space-y-3.5">
+            <form onSubmit={handleRecordPayment} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Payment Amount (₹) *
-                </label>
+                <label className="block font-semibold text-slate-700 mb-1">Amount Paid (₹) *</label>
                 <input
                   type="number"
                   step="0.01"
-                  required
+                  min="0.01"
                   max={invoice.balanceDue}
+                  required
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-900"
                 />
-                <div className="text-[11px] text-slate-500 mt-1">
-                  Current Balance Due: {formatCurrency(invoice.balanceDue)}
-                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Payment Mode *
-                </label>
+                <label className="block font-semibold text-slate-700 mb-1">Payment Method *</label>
                 <select
                   value={payMode}
                   onChange={(e) => setPayMode(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
                 >
                   <option value="cash">Cash</option>
-                  <option value="upi">UPI (GPay, PhonePe, Paytm)</option>
-                  <option value="bank_transfer">Bank Transfer (NEFT/RTGS/IMPS)</option>
-                  <option value="card">Credit / Debit Card</option>
-                  <option value="credit">Credit / Account</option>
+                  <option value="upi">UPI</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="card">Card</option>
+                  <option value="credit">Credit</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Transaction / Reference ID (Optional)
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Transaction Reference / UTR
                 </label>
                 <input
                   type="text"
                   value={payRef}
                   onChange={(e) => setPayRef(e.target.value)}
-                  placeholder="e.g. UTR / UPI Ref / Cheque No."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                  placeholder="Optional UTR / Cheque / UPI Ref"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  rows={2}
+                <label className="block font-semibold text-slate-700 mb-1">Notes</label>
+                <input
+                  type="text"
                   value={payNotes}
                   onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="Additional payment notes..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsPaymentOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingPayment}
-                  className="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50"
+                  className="px-5 py-2 font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50"
                 >
-                  {submittingPayment ? "Recording..." : "Save Payment"}
+                  {submittingPayment ? "Recording..." : "Save Payment Transaction"}
                 </button>
               </div>
             </form>
@@ -721,42 +821,92 @@ export default function InvoiceDetailsPage() {
 
       {/* Cancel Invoice Modal */}
       {isCancelOpen && (
-        <div className="no-print print:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs no-print">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <h2 className="text-base font-bold text-red-600">Cancel Tax Invoice</h2>
+            <h3 className="text-base font-bold text-slate-900">Cancel GST Invoice</h3>
             <p className="text-xs text-slate-500 mt-0.5 mb-4">
-              Cancelling will reverse product stock movements back to warehouse inventory and create an audit log.
+              Cancelling reverses stock deductions and stops automatic payment reminders.
             </p>
-
-            <form onSubmit={handleCancelInvoice} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Mandatory Cancellation Reason *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="e.g. Customer cancelled order / Incorrect items billed"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
+            <form onSubmit={handleCancelInvoice} className="space-y-4 text-xs">
+              <textarea
+                rows={3}
+                required
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Reason for cancelling this invoice..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900"
+              />
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCancelOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
                 >
-                  Close
+                  Back
                 </button>
                 <button
                   type="submit"
                   disabled={submittingCancel}
-                  className="px-4 py-2 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg disabled:opacity-50"
+                  className="px-4 py-2 font-semibold bg-amber-600 hover:bg-amber-500 text-white rounded-lg"
                 >
-                  {submittingCancel ? "Cancelling..." : "Confirm Cancellation & Restore Stock"}
+                  {submittingCancel ? "Cancelling..." : "Confirm Cancel"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Soft Delete Modal */}
+      {isDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs no-print">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Soft-Delete Tax Invoice</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Preserves full previous invoice snapshot, deleted-by user, and audit reason.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 mb-4">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Invoice Number:</span>
+                <span className="font-mono font-bold text-slate-900">{invoice.invoiceNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Customer Name:</span>
+                <span className="font-bold text-slate-900">{invoice.customer?.name}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSoftDelete} className="space-y-4 text-xs">
+              <textarea
+                rows={2}
+                required
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Mandatory audit reason for soft deletion..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteOpen(false)}
+                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingDelete}
+                  className="px-4 py-2 font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg"
+                >
+                  {submittingDelete ? "Deleting..." : "Confirm Soft Delete"}
                 </button>
               </div>
             </form>

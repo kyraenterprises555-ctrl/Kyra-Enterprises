@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "kayra_enterprises_production_jwt_secret_key_9876543210_enterprise_secure";
+const JWT_SECRET =
+  process.env.JWT_SECRET || "kyra_enterprises_production_jwt_secret_key_9876543210_enterprise_secure";
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
-const AUTH_COOKIE_NAME = "kayra_session";
+const AUTH_COOKIE_NAME = "kyra_session";
 
-// Public paths that do not require authentication
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/seed"];
+// Public endpoints (cron endpoint validates CRON_SECRET independently)
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/seed", "/api/cron/payment-reminders"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow static files, next internals, and public endpoints
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
@@ -38,10 +38,13 @@ export async function middleware(request: NextRequest) {
     const { payload } = await jwtVerify(token, SECRET_KEY);
     const role = payload.role as string;
 
-    // RBAC Route-level enforcement
-    // /users and /settings are admin-only
+    // Admin-only routes
     if (
-      (pathname.startsWith("/users") || pathname.startsWith("/api/users")) &&
+      (pathname.startsWith("/users") ||
+        pathname.startsWith("/api/users") ||
+        pathname.startsWith("/audit-logs") ||
+        pathname.startsWith("/api/audit-logs") ||
+        pathname.startsWith("/settings")) &&
       role !== "admin"
     ) {
       if (pathname.startsWith("/api/")) {
@@ -50,7 +53,17 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // Pass user info downstream in headers
+    // Manager & Admin routes
+    if (
+      (pathname.startsWith("/products/bulk-upload") ||
+        pathname.startsWith("/inventory") ||
+        pathname.startsWith("/purchases") ||
+        pathname.startsWith("/reports")) &&
+      role === "billing_staff"
+    ) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", (payload.userId as string) || "");
     requestHeaders.set("x-user-role", role || "");
@@ -74,7 +87,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

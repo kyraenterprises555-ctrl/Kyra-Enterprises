@@ -26,30 +26,67 @@ export async function PUT(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user || user.role === "billing_staff") {
+      return NextResponse.json(
+        { error: "Unauthorized: Product updates require Manager or Admin access" },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;
-    const body = await request.json();
-
-    const updated = await DataService.updateProduct(id, body);
-    if (!updated) {
+    const existing = await DataService.getProductById(id);
+    if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    const body = await request.json();
+    const payload: any = { ...body };
+    if (payload.sellingPrice !== undefined) payload.sellingPrice = Number(payload.sellingPrice);
+    if (payload.purchasePrice !== undefined) payload.purchasePrice = Number(payload.purchasePrice);
+    if (payload.availableQuantity !== undefined) {
+      payload.availableQuantity = Number(payload.availableQuantity);
+    }
+    if (payload.minStockAlert !== undefined) payload.minStockAlert = Number(payload.minStockAlert);
+    if (payload.gstRate !== undefined) payload.gstRate = Number(payload.gstRate);
+
+    if (payload.sellingPrice !== undefined && payload.sellingPrice < 0) {
+      return NextResponse.json({ error: "Selling price cannot be negative" }, { status: 400 });
+    }
+    if (payload.purchasePrice !== undefined && payload.purchasePrice < 0) {
+      return NextResponse.json({ error: "Purchase price cannot be negative" }, { status: 400 });
+    }
+    if (payload.availableQuantity !== undefined && payload.availableQuantity < 0) {
+      return NextResponse.json({ error: "Quantity cannot be negative" }, { status: 400 });
+    }
+
+    const updated = await DataService.updateProduct(id, payload, {
+      userId: user.userId,
+      userName: user.name,
+    });
+
+    const priceChanged =
+      (payload.sellingPrice !== undefined && payload.sellingPrice !== existing.sellingPrice) ||
+      (payload.purchasePrice !== undefined && payload.purchasePrice !== existing.purchasePrice);
+
     await recordAuditLog({
-      action: "PRODUCT_UPDATED",
+      action: priceChanged ? "PRODUCT_PRICE_UPDATED" : "PRODUCT_UPDATED",
       entity: "Product",
       entityId: id,
       performedBy: { userId: user.userId, userName: user.name, role: user.role },
-      details: { updatedFields: Object.keys(body) },
+      details: {
+        sku: updated?.sku,
+        previousPrice: existing.sellingPrice,
+        newPrice: updated?.sellingPrice,
+        previousQty: existing.availableQuantity,
+        newQty: updated?.availableQuantity,
+        updatedFields: Object.keys(body),
+      },
     });
 
     return NextResponse.json({ success: true, product: updated });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update product";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
@@ -64,7 +101,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const res = await DataService.deleteProduct(id);
+    const res = await DataService.deleteProduct(id, {
+      userId: user.userId,
+      userName: user.name,
+    });
     if (!res) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
@@ -74,14 +114,15 @@ export async function DELETE(
       entity: "Product",
       entityId: id,
       performedBy: { userId: user.userId, userName: user.name, role: user.role },
-      details: { name: res.product.name, sku: res.product.sku, permanent: res.permanent },
+      details: { name: res.product?.name, sku: res.product?.sku, permanent: res.permanent },
     });
 
     return NextResponse.json({
       success: true,
+      permanent: res.permanent,
       message: res.permanent
-        ? "Product deleted permanently"
-        : "Product deleted from catalog (archived for historical invoices)",
+        ? "Product removed permanently (no historical invoices referenced it)"
+        : "Product deactivated and soft-deleted to preserve historical invoice integrity",
       product: res.product,
     });
   } catch (error: unknown) {

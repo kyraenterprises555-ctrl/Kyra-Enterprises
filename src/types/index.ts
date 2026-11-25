@@ -7,9 +7,12 @@ export interface SessionUser {
   role: UserRole;
 }
 
-export type PaymentStatus = "paid" | "partial" | "unpaid";
-export type InvoiceStatus = "finalized" | "cancelled";
-export type PaymentMode = "cash" | "upi" | "bank_transfer" | "card" | "credit";
+export type PaymentStatus = "paid" | "partial" | "unpaid" | "overdue";
+export type InvoiceStatus = "finalized" | "amended" | "cancelled" | "deleted";
+export type PaymentMode = "cash" | "upi" | "bank_transfer" | "card" | "credit" | "other";
+export type ReminderChannel = "email" | "whatsapp" | "sms" | "in_app";
+export type ReminderStatus = "active" | "paused" | "completed" | "cancelled";
+export type DuplicateStrategy = "skip" | "update" | "new_only";
 
 export interface ApiResponse<T = unknown> {
   success: boolean;

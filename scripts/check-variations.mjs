@@ -13,12 +13,12 @@ const passwords = [
 
 const usernames = [
   "kyraenterprises555_db_user",
-  "kayraenterprises555_db_user"
+  "kyraenterprises555_db_user"
 ];
 
 for (const u of usernames) {
   for (const p of passwords) {
-    const uri = `mongodb+srv://${u}:${encodeURIComponent(p)}@cluster0.qixixqm.mongodb.net/kayra_enterprises?retryWrites=true&w=majority`;
+    const uri = `mongodb+srv://${u}:${encodeURIComponent(p)}@cluster0.qixixqm.mongodb.net/kyra_enterprises?retryWrites=true&w=majority`;
     try {
       const client = new MongoClient(uri, { serverSelectionTimeoutMS: 3000 });
       await client.connect();

@@ -1,56 +1,80 @@
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
-}
-
-interface MongooseCache {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+interface KyraMongoState {
+  instance: typeof mongoose | null;
+  connecting: Promise<typeof mongoose> | null;
+  replicaSetReady: boolean | null;
 }
 
 declare global {
   // eslint-disable-next-line no-var
-  var mongooseCache: MongooseCache | undefined;
+  var kyraMongoState: KyraMongoState | undefined;
 }
 
-const cached: MongooseCache = global.mongooseCache || {
-  conn: null,
-  promise: null,
+const mongoState: KyraMongoState = global.kyraMongoState ?? {
+  instance: null,
+  connecting: null,
+  replicaSetReady: null,
 };
 
-if (!global.mongooseCache) {
-  global.mongooseCache = cached;
-}
+global.kyraMongoState = mongoState;
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (cached.conn) {
-    return cached.conn;
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI is required for Kyra Enterprises database connectivity.");
   }
 
-  if (!cached.promise) {
-    const opts = {
+  if (mongoState.instance && mongoose.connection.readyState === 1) {
+    return mongoState.instance;
+  }
+
+  if (!mongoState.connecting) {
+    mongoState.connecting = mongoose.connect(uri, {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 8000,
+      serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongooseInstance) => {
-      return mongooseInstance;
     });
   }
 
   try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
+    mongoState.instance = await mongoState.connecting;
+    if (mongoState.replicaSetReady === null && mongoose.connection.db) {
+      try {
+        const info = await mongoose.connection.db.admin().command({ hello: 1 });
+        mongoState.replicaSetReady = Boolean(info.setName || info.msg === "isdbgrid");
+      } catch {
+        mongoState.replicaSetReady = false;
+      }
+    }
+    return mongoState.instance;
+  } catch (err) {
+    mongoState.connecting = null;
+    mongoState.instance = null;
+    throw err;
+  }
+}
+
+export async function runInMongoTransaction<T>(
+  operation: (session?: ClientSession) => Promise<T>
+): Promise<T> {
+  await connectToDatabase();
+
+  if (mongoState.replicaSetReady) {
+    const dbSession = await mongoose.startSession();
+    try {
+      let output!: T;
+      await dbSession.withTransaction(async () => {
+        output = await operation(dbSession);
+      });
+      return output;
+    } finally {
+      await dbSession.endSession();
+    }
   }
 
-  return cached.conn;
+  return operation(undefined);
 }
 
 export default connectToDatabase;
