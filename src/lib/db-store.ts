@@ -477,6 +477,7 @@ export const DataService = {
           { name: { $regex: params.search, $options: "i" } },
           { sku: { $regex: params.search, $options: "i" } },
           { hsnCode: { $regex: params.search, $options: "i" } },
+          { barcode: { $regex: params.search, $options: "i" } },
         ];
       }
       let items: any[] = await Product.find(query).sort({ createdAt: -1 }).lean();
@@ -504,7 +505,7 @@ export const DataService = {
           p.name.toLowerCase().includes(q) ||
           p.sku.toLowerCase().includes(q) ||
           (p.hsnCode && String(p.hsnCode).toLowerCase().includes(q)) ||
-          (p.barcode && String(p.barcode).includes(q))
+          (p.barcode && String(p.barcode).toLowerCase().includes(q))
       );
     }
     if (params?.status === "low_stock") {

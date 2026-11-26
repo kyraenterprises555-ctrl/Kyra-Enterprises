@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   FilePlus2,
@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Search,
   Calendar,
+  Scan,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -220,10 +221,34 @@ function BillingEngineContent() {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.sku.toLowerCase().includes(q) ||
-          (p.hsnCode && String(p.hsnCode).includes(q))
+          (p.hsnCode && String(p.hsnCode).includes(q)) ||
+          (p.barcode && String(p.barcode).toLowerCase().includes(q))
       )
       .slice(0, 8);
   }, [products, productQuery]);
+
+  const handleProductSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const raw = productQuery.trim();
+      if (!raw) return;
+
+      const q = raw.toLowerCase();
+      // First look for exact match on RFID / Barcode or SKU
+      const matched =
+        products.find(
+          (p) =>
+            (p.barcode && String(p.barcode).trim().toLowerCase() === q) ||
+            (p.sku && String(p.sku).trim().toLowerCase() === q)
+        ) || (filteredQuickProducts.length > 0 ? filteredQuickProducts[0] : null);
+
+      if (matched) {
+        addProductToInvoice(matched);
+      } else {
+        toast.error(`No product found matching "${raw}"`);
+      }
+    }
+  };
 
   const addProductToInvoice = (prod: any) => {
     if (prod.availableQuantity <= 0) {
@@ -239,6 +264,7 @@ function BillingEngineContent() {
       }
       next[existingIdx].quantity += 1;
       setItems(next);
+      toast.success(`Qty +1: "${prod.name}" (${next[existingIdx].quantity})`);
     } else {
       setItems((prev) => [
         ...prev,
@@ -256,6 +282,7 @@ function BillingEngineContent() {
           gstRate: prod.gstRate,
         },
       ]);
+      toast.success(`Added "${prod.name}"`);
     }
     setProductQuery("");
   };
@@ -555,9 +582,18 @@ function BillingEngineContent() {
                 type="text"
                 value={productQuery}
                 onChange={(e) => setProductQuery(e.target.value)}
-                placeholder="Quick add by Product Name, SKU, or HSN..."
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+                onKeyDown={handleProductSearchKeyDown}
+                placeholder="Scan RFID / Barcode, or search Name / SKU..."
+                className="w-full pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
               />
+              {!productQuery && (
+                <span
+                  title="RFID Scanner Ready (Keyboard Wedge)"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors"
+                >
+                  <Scan className="w-3.5 h-3.5 text-emerald-600/70" />
+                </span>
+              )}
               {filteredQuickProducts.length > 0 && (
                 <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto divide-y divide-slate-100 text-xs">
                   {filteredQuickProducts.map((p) => (
@@ -569,8 +605,18 @@ function BillingEngineContent() {
                     >
                       <div className="min-w-0">
                         <div className="font-semibold text-slate-900 truncate">{p.name}</div>
-                        <div className="text-[10px] font-mono text-slate-500">
-                          SKU: {p.sku} &bull; HSN: {p.hsnCode} &bull; GST: {p.gstRate}%
+                        <div className="text-[10px] font-mono text-slate-500 flex items-center gap-1.5 flex-wrap">
+                          <span>SKU: {p.sku}</span>
+                          <span>&bull;</span>
+                          <span>HSN: {p.hsnCode}</span>
+                          {p.barcode && (
+                            <>
+                              <span>&bull;</span>
+                              <span className="text-emerald-700 font-semibold">RFID: {p.barcode}</span>
+                            </>
+                          )}
+                          <span>&bull;</span>
+                          <span>GST: {p.gstRate}%</span>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
