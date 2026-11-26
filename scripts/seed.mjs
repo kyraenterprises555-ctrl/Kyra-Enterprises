@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import xlsx from "xlsx";
 
 const MONGODB_URI =
   process.env.MONGODB_URI ||
@@ -96,34 +97,25 @@ async function seed() {
   // 3. Categories
   const categoryColl = db.collection("categories");
   const categoriesCount = await categoryColl.countDocuments({});
-  let catElectronicsId, catHardwareId, catOfficeId;
+  let catMap = {};
 
   if (categoriesCount === 0) {
     console.log("Seeding Categories...");
-    const cat1 = await categoryColl.insertOne({
-      name: "Electronics & Accessories",
-      description: "Electronic devices, adapters, monitors, and peripherals",
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const categoryDefs = [
+      { name: "Home Appliances - Irons", description: "Dry and Steam Irons", isActive: true, createdAt: new Date(), updatedAt: new Date() },
+      { name: "Fans & Ventilation", description: "Ceiling, Table, Pedestal, and Exhaust Fans", isActive: true, createdAt: new Date(), updatedAt: new Date() },
+      { name: "Kitchen Appliances - Kettles", description: "Electric Kettles, Mixers, and Cooktops", isActive: true, createdAt: new Date(), updatedAt: new Date() },
+      { name: "Water Heaters & Coolers", description: "Geysers, Water Heaters, and Air Coolers", isActive: true, createdAt: new Date(), updatedAt: new Date() },
+    ];
+    const catResult = await categoryColl.insertMany(categoryDefs);
+    categoryDefs.forEach((cat, idx) => {
+      catMap[cat.name] = catResult.insertedIds[idx];
     });
-    const cat2 = await categoryColl.insertOne({
-      name: "Computer Hardware",
-      description: "Hard drives, SSDs, RAM, and computer components",
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  } else {
+    const existingCats = await categoryColl.find({}).toArray();
+    existingCats.forEach((c) => {
+      catMap[c.name] = c._id;
     });
-    const cat3 = await categoryColl.insertOne({
-      name: "Office Supplies & Stationeries",
-      description: "Printer cartridges, paper reams, and office essentials",
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    catElectronicsId = cat1.insertedId;
-    catHardwareId = cat2.insertedId;
-    catOfficeId = cat3.insertedId;
   }
 
   // 4. Products & Initial Stock Ledger
@@ -132,186 +124,87 @@ async function seed() {
   const productsCount = await productColl.countDocuments({});
 
   if (productsCount === 0) {
-    console.log("Seeding Products and Stock Movements...");
-    const productsData = [
-      {
-        name: "Dell 24-inch FHD IPS Monitor",
-        sku: "KE-MON-24",
-        barcode: "8901234567890",
-        categoryId: catElectronicsId,
-        categoryName: "Electronics & Accessories",
-        description: "1080p 75Hz IPS Display with HDMI & DisplayPort",
+    console.log("Seeding Products from Excel...");
+    const workbook = xlsx.readFile("product list with hsn.xlsx");
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawRows = xlsx.utils.sheet_to_json(firstSheet, { header: 1 });
+
+    const products = [];
+    const usedSkus = new Set();
+
+    for (let i = 2; i < rawRows.length; i++) {
+      const row = rawRows[i];
+      if (!row || !row[1]) continue;
+
+      const name = String(row[1]).trim();
+      const rawHsn = row[2] ? String(row[2]).trim() : "85164000";
+      const rateRaw = String(row[3] || "0").replace(/,/g, "");
+      const rateInclTax = parseFloat(rateRaw) || 1000;
+
+      const taxableRate = Math.round((rateInclTax / 1.18) * 100) / 100;
+      const purchasePrice = Math.round(taxableRate * 0.8 * 100) / 100;
+
+      const codeMatch = name.match(/\(([^\)]+)\)/);
+      let sku = codeMatch ? `KE-${codeMatch[1].trim()}` : `KE-PRD-${String(i - 1).padStart(3, "0")}`;
+      if (usedSkus.has(sku)) {
+        sku = name.toLowerCase().includes("turbo") ? `${sku}-TURBO` : `${sku}-${i - 1}`;
+      }
+      usedSkus.add(sku);
+
+      let categoryName = "Home Appliances - Irons";
+      const lower = name.toLowerCase();
+      if (lower.includes("fan") || lower.includes("cf") || lower.includes("farrata") || lower.includes("exhaust") || lower.includes("table")) {
+        categoryName = "Fans & Ventilation";
+      } else if (lower.includes("kettle") || lower.includes("mixer") || lower.includes("notch")) {
+        categoryName = "Kitchen Appliances - Kettles";
+      } else if (lower.includes("cooler") || lower.includes("geyser") || lower.includes("astor")) {
+        categoryName = "Water Heaters & Coolers";
+      }
+
+      const catId = catMap[categoryName] || Object.values(catMap)[0];
+      const qty = 25;
+
+      products.push({
+        name,
+        sku,
+        barcode: `890${String(1000000000 + i)}`,
+        categoryId: catId,
+        categoryName,
+        description: name,
         uom: "PCS",
-        sellingPrice: 11500,
-        purchasePrice: 9200,
-        availableQuantity: 24,
+        sellingPrice: taxableRate,
+        purchasePrice,
+        availableQuantity: qty,
         minStockAlert: 5,
         gstRate: 18,
-        hsnCode: "8528",
+        hsnCode: rawHsn,
         isActive: true,
         isDeleted: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-      },
-      {
-        name: "Logitech MX Master 3S Wireless Mouse",
-        sku: "KE-LOGI-MX3S",
-        barcode: "8901234567891",
-        categoryId: catElectronicsId,
-        categoryName: "Electronics & Accessories",
-        description: "Ergonomic quiet click Bluetooth mouse with 8K DPI sensor",
-        uom: "PCS",
-        sellingPrice: 7999,
-        purchasePrice: 6200,
-        availableQuantity: 35,
-        minStockAlert: 8,
-        gstRate: 18,
-        hsnCode: "8471",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        name: "Samsung 980 Pro 1TB NVMe M.2 SSD",
-        sku: "KE-SSD-SAM-1TB",
-        barcode: "8901234567892",
-        categoryId: catHardwareId,
-        categoryName: "Computer Hardware",
-        description: "PCIe 4.0 NVMe SSD with read speeds up to 7,000 MB/s",
-        uom: "PCS",
-        sellingPrice: 9400,
-        purchasePrice: 7600,
-        availableQuantity: 18,
-        minStockAlert: 5,
-        gstRate: 18,
-        hsnCode: "8471",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        name: "Crucial 16GB DDR5 4800MHz Desktop RAM",
-        sku: "KE-RAM-CRU-16",
-        barcode: "8901234567893",
-        categoryId: catHardwareId,
-        categoryName: "Computer Hardware",
-        description: "High performance dual-channel ready desktop memory module",
-        uom: "PCS",
-        sellingPrice: 4200,
-        purchasePrice: 3300,
-        availableQuantity: 40,
-        minStockAlert: 10,
-        gstRate: 18,
-        hsnCode: "8473",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        name: "HP LaserJet 108w Monochrome Printer",
-        sku: "KE-PRN-HP-108W",
-        barcode: "8901234567894",
-        categoryId: catElectronicsId,
-        categoryName: "Electronics & Accessories",
-        description: "Compact wireless laser printer with fast crisp printing",
-        uom: "PCS",
-        sellingPrice: 13800,
-        purchasePrice: 11200,
-        availableQuantity: 12,
-        minStockAlert: 3,
-        gstRate: 18,
-        hsnCode: "8443",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        name: "HP 110A Black Original Laser Toner Cartridge",
-        sku: "KE-TNR-HP-110A",
-        barcode: "8901234567895",
-        categoryId: catOfficeId,
-        categoryName: "Office Supplies & Stationeries",
-        description: "Original toner cartridge with 1500 page yield",
-        uom: "PCS",
-        sellingPrice: 3600,
-        purchasePrice: 2850,
-        availableQuantity: 50,
-        minStockAlert: 10,
-        gstRate: 18,
-        hsnCode: "8443",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        name: "Bilt Matrix Copier Paper A4 75 GSM (Box of 5 Reams)",
-        sku: "KE-PPR-A4-75",
-        barcode: "8901234567896",
-        categoryId: catOfficeId,
-        categoryName: "Office Supplies & Stationeries",
-        description: "Premium high brightness multi-purpose copier paper",
-        uom: "BOX",
-        sellingPrice: 1450,
-        purchasePrice: 1150,
-        availableQuantity: 60,
-        minStockAlert: 15,
-        gstRate: 12,
-        hsnCode: "4802",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        name: "APC Back-UPS 600VA / 360W Battery Backup",
-        sku: "KE-UPS-APC-600",
-        barcode: "8901234567897",
-        categoryId: catElectronicsId,
-        categoryName: "Electronics & Accessories",
-        description: "Line-interactive UPS with battery surge protection",
-        uom: "PCS",
-        sellingPrice: 3850,
-        purchasePrice: 3000,
-        availableQuantity: 15,
-        minStockAlert: 4,
-        gstRate: 18,
-        hsnCode: "8504",
-        isActive: true,
-        isDeleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
+      });
+    }
 
-    const insertedProducts = await productColl.insertMany(productsData);
+    const insertedProducts = await productColl.insertMany(products);
 
-    // Record initial stock movements
-    const stockMovements = Object.keys(insertedProducts.insertedIds).map((idx) => {
-      const prod = productsData[idx];
-      return {
-        productId: insertedProducts.insertedIds[idx],
-        productName: prod.name,
-        sku: prod.sku,
-        type: "purchase",
-        quantity: prod.availableQuantity,
-        previousQuantity: 0,
-        newQuantity: prod.availableQuantity,
-        referenceType: "purchase",
-        referenceNumber: "INITIAL-STOCK",
-        reason: "Initial warehouse inventory intake",
-        unitCost: prod.purchasePrice,
-        performedBy: {
-          userId: "admin_seed",
-          userName: "Vivek Kr Jha",
-        },
-        createdAt: new Date(),
-      };
-    });
+    const stockMovements = products.map((prod, idx) => ({
+      productId: insertedProducts.insertedIds[idx],
+      productName: prod.name,
+      sku: prod.sku,
+      type: "purchase",
+      quantity: prod.availableQuantity,
+      previousQuantity: 0,
+      newQuantity: prod.availableQuantity,
+      referenceType: "purchase",
+      referenceNumber: "INITIAL-STOCK",
+      reason: "Initial warehouse inventory intake",
+      unitCost: prod.purchasePrice,
+      performedBy: {
+        userId: "admin_seed",
+        userName: "Vivek Kr Jha",
+      },
+      createdAt: new Date(),
+    }));
 
     await stockColl.insertMany(stockMovements);
   }
@@ -324,16 +217,16 @@ async function seed() {
     console.log("Seeding Customers...");
     await customerColl.insertMany([
       {
-        name: "Sharma Infotech Solutions Pvt Ltd",
-        businessName: "Sharma Infotech",
-        phone: "+91 98223 34455",
-        email: "procurement@sharmainfotech.com",
-        billingAddress: "402, Skyline Towers, Sector 62",
-        shippingAddress: "402, Skyline Towers, Sector 62, Noida, UP - 201309",
-        gstin: "09AABCS1234E1Z8", // Uttar Pradesh (Inter-state supply test)
-        state: "Uttar Pradesh",
-        stateCode: "09",
-        customerType: "registered",
+        name: "DEV ELECTRIC",
+        businessName: "DEV ELECTRIC",
+        phone: "+91 98012 34567",
+        email: "develectric@gmail.com",
+        billingAddress: "BENIPATTI MADHUBANI",
+        shippingAddress: "BENIPATTI MADHUBANI",
+        gstin: "",
+        state: "Bihar",
+        stateCode: "10",
+        customerType: "unregistered",
         balance: 0,
         isActive: true,
         createdAt: new Date(),
@@ -344,11 +237,11 @@ async function seed() {
         businessName: "Apex Traders",
         phone: "+91 99110 99887",
         email: "accounts@apextraders.in",
-        billingAddress: "Shop 12, Nehru Place Market",
-        shippingAddress: "Shop 12, Nehru Place Market, New Delhi - 110019",
-        gstin: "07AAHCA9988C1ZK", // Delhi (Intra-state supply test)
-        state: "Delhi",
-        stateCode: "07",
+        billingAddress: "Shop 12, Main Market, Patna, Bihar - 800001",
+        shippingAddress: "Shop 12, Main Market, Patna, Bihar - 800001",
+        gstin: "10AAHCA9988C1ZK",
+        state: "Bihar",
+        stateCode: "10",
         customerType: "registered",
         balance: 0,
         isActive: true,
@@ -356,16 +249,16 @@ async function seed() {
         updatedAt: new Date(),
       },
       {
-        name: "Anand Kumar",
-        businessName: "",
-        phone: "+91 98711 22334",
-        email: "anand.kumar@gmail.com",
-        billingAddress: "B-24, Lajpat Nagar-II, New Delhi - 110024",
-        shippingAddress: "B-24, Lajpat Nagar-II, New Delhi - 110024",
-        gstin: "",
-        state: "Delhi",
-        stateCode: "07",
-        customerType: "unregistered",
+        name: "Sharma Infotech Solutions Pvt Ltd",
+        businessName: "Sharma Infotech",
+        phone: "+91 98223 34455",
+        email: "procurement@sharmainfotech.com",
+        billingAddress: "402, Skyline Towers, Sector 62, Noida, UP - 201309",
+        shippingAddress: "402, Skyline Towers, Sector 62, Noida, UP - 201309",
+        gstin: "09AABCS1234E1Z8",
+        state: "Uttar Pradesh",
+        stateCode: "09",
+        customerType: "registered",
         balance: 0,
         isActive: true,
         createdAt: new Date(),
