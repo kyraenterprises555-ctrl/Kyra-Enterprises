@@ -27,11 +27,11 @@
   "users": [
     {
       "_id": "user_admin",
-      "name": "Rajesh Sharma (Admin)",
+      "name": "Vivek Kr Jha",
       "email": "admin@kyra.com",
       "passwordHash": "$2a$12$DONnuGwM4DcDYbLhhD8xeuDnfBm20PKufbTPFr.CLjZIaHLI/u27.",
       "role": "admin",
-      "phone": "+91 98112 34567",
+      "phone": "+91 7393931555",
       "isActive": true,
       "createdAt": "2026-11-25T06:51:59.957Z",
       "updatedAt": "2026-11-25T06:51:59.958Z"
@@ -1154,7 +1154,7 @@
       "details": {},
       "performedBy": {
         "userId": "user_admin",
-        "userName": "Rajesh Sharma (Admin)",
+        "userName": "Vivek Kr Jha",
         "role": "admin"
       },
       "ipAddress": "",
@@ -1172,7 +1172,7 @@
       },
       "performedBy": {
         "userId": "user_admin",
-        "userName": "Rajesh Sharma (Admin)",
+        "userName": "Vivek Kr Jha",
         "role": "admin"
       },
       "ipAddress": "",
@@ -1190,7 +1190,7 @@
       },
       "performedBy": {
         "userId": "user_admin",
-        "userName": "Rajesh Sharma (Admin)",
+        "userName": "Vivek Kr Jha",
         "role": "admin"
       },
       "ipAddress": "",
@@ -1263,7 +1263,7 @@
       },
       "performedBy": {
         "userId": "user_admin",
-        "userName": "Rajesh Sharma (Owner)",
+        "userName": "Vivek Kr Jha",
         "role": "admin"
       },
       "ipAddress": "",

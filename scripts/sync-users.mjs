@@ -3,11 +3,11 @@ import bcrypt from "bcryptjs";
 
 const defaults = [
   {
-    name: "Rajesh Sharma (Admin)",
+    name: "Vivek Kr Jha",
     email: "admin@kyra.com",
     pass: "Admin@123",
     role: "admin",
-    phone: "+91 98112 34567",
+    phone: "+91 7393931555",
   },
   {
     name: "Pooja Verma (Manager)",
@@ -28,6 +28,10 @@ const defaults = [
 for (const file of ["src/lib/initial-data.json", ".data/store.json"]) {
   if (!fs.existsSync(file)) continue;
   const data = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (Array.isArray(data.users) && data.users.length > 0) {
+    console.log("Users already exist in", file, "- skipping overwrite to protect existing admin details.");
+    continue;
+  }
   data.users = defaults.map((d) => ({
     _id: `user_${d.role}`,
     name: d.name,

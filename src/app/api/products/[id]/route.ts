@@ -43,20 +43,18 @@ export async function PUT(
     const payload: any = { ...body };
     if (payload.sellingPrice !== undefined) payload.sellingPrice = Number(payload.sellingPrice);
     if (payload.purchasePrice !== undefined) payload.purchasePrice = Number(payload.purchasePrice);
-    if (payload.availableQuantity !== undefined) {
-      payload.availableQuantity = Number(payload.availableQuantity);
-    }
     if (payload.minStockAlert !== undefined) payload.minStockAlert = Number(payload.minStockAlert);
     if (payload.gstRate !== undefined) payload.gstRate = Number(payload.gstRate);
+
+    // Stock quantities must only change through authorized inventory operations (Stock In/Out, Adjustments, Invoices, Purchases)
+    // Never allow general product metadata edits (name, price, HSN, etc.) to alter or reset inventory quantity!
+    delete payload.availableQuantity;
 
     if (payload.sellingPrice !== undefined && payload.sellingPrice < 0) {
       return NextResponse.json({ error: "Selling price cannot be negative" }, { status: 400 });
     }
     if (payload.purchasePrice !== undefined && payload.purchasePrice < 0) {
       return NextResponse.json({ error: "Purchase price cannot be negative" }, { status: 400 });
-    }
-    if (payload.availableQuantity !== undefined && payload.availableQuantity < 0) {
-      return NextResponse.json({ error: "Quantity cannot be negative" }, { status: 400 });
     }
 
     const updated = await DataService.updateProduct(id, payload, {
@@ -77,9 +75,8 @@ export async function PUT(
         sku: updated?.sku,
         previousPrice: existing.sellingPrice,
         newPrice: updated?.sellingPrice,
-        previousQty: existing.availableQuantity,
-        newQty: updated?.availableQuantity,
-        updatedFields: Object.keys(body),
+        availableQuantity: updated?.availableQuantity,
+        updatedFields: Object.keys(payload),
       },
     });
 

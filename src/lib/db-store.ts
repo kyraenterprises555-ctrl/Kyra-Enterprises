@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import mongoose from "mongoose";
 import connectToDatabase, { runInMongoTransaction } from "./mongodb";
 import User from "@/models/User";
 import BusinessSettings, {
@@ -152,10 +153,31 @@ function readStore(): LocalStore {
       memoryStore = initial;
       return initial;
     }
-    const raw = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
-    memoryStore = normalizeStoreShape(raw);
-    return memoryStore;
-  } catch {
+
+    let content = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        content = fs.readFileSync(DATA_FILE, "utf-8");
+        if (content && content.trim()) break;
+      } catch {
+        const end = Date.now() + 25;
+        while (Date.now() < end) {}
+      }
+    }
+
+    if (content && content.trim()) {
+      const raw = JSON.parse(content);
+      memoryStore = normalizeStoreShape(raw);
+      return memoryStore;
+    }
+
+    if (memoryStore) return memoryStore;
+    const initial = getInitialStore();
+    memoryStore = initial;
+    return initial;
+  } catch (err) {
+    console.error("[Kyra Enterprises] Error reading persistent store:", err);
+    if (memoryStore) return memoryStore;
     const initial = getInitialStore();
     memoryStore = initial;
     return initial;
@@ -168,18 +190,42 @@ function writeStore(store: LocalStore): void {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
-  } catch {}
+    const tempFile = `${DATA_FILE}.tmp.${Date.now()}`;
+    fs.writeFileSync(tempFile, JSON.stringify(store, null, 2));
+    try {
+      fs.renameSync(tempFile, DATA_FILE);
+    } catch {
+      fs.copyFileSync(tempFile, DATA_FILE);
+      try {
+        fs.unlinkSync(tempFile);
+      } catch {}
+    }
+  } catch (err) {
+    console.warn("Storage notice: Filesystem write error:", err);
+  }
 }
 
 let isMongoConnected: boolean | null = null;
 let lastMongoAttemptAt = 0;
 
 async function checkMongoConnection(): Promise<boolean> {
-  if (process.env.FORCE_LOCAL_STORE === "true") return false;
+  if (process.env.FORCE_LOCAL_STORE === "true") {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL ERROR: FORCE_LOCAL_STORE cannot be enabled in production. Production must use persistent MongoDB Atlas."
+      );
+    }
+    return false;
+  }
   if (isMongoConnected === true) return true;
   const now = Date.now();
-  if (isMongoConnected === false && now - lastMongoAttemptAt < 15000) {
+  const retryDelay = process.env.NODE_ENV === "production" ? 15000 : 120000;
+  if (isMongoConnected === false && now - lastMongoAttemptAt < retryDelay) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL ERROR: Production database connection to MongoDB Atlas is unavailable. Refusing silent fallback to in-memory storage to prevent data loss."
+      );
+    }
     return false;
   }
   lastMongoAttemptAt = now;
@@ -187,8 +233,16 @@ async function checkMongoConnection(): Promise<boolean> {
     await connectToDatabase();
     isMongoConnected = true;
     return true;
-  } catch {
+  } catch (err: any) {
     isMongoConnected = false;
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        `CRITICAL DATABASE ERROR: Failed to connect to persistent MongoDB Atlas in production: ${err?.message || "Connection failed"}. Silent fallback is strictly disabled to protect existing records.`
+      );
+    }
+    console.warn(
+      "[Kyra Enterprises DB Notice]: MongoDB connection unavailable in development mode; utilizing local persistent store (.data/store.json)."
+    );
     return false;
   }
 }
@@ -312,10 +366,19 @@ export const DataService = {
 
   async getUserById(id: string) {
     if (await checkMongoConnection()) {
-      return await User.findById(id).select("-passwordHash").lean();
+      let u = null;
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        u = await User.findById(id).select("-passwordHash").lean();
+      }
+      if (!u) {
+        u = await User.findOne({ $or: [{ _id: id as any }, { email: id }] }).select("-passwordHash").lean();
+      }
+      return u;
     }
     const store = readStore();
-    const u = store.users.find((u) => String(u._id) === String(id));
+    const u = store.users.find(
+      (u) => String(u._id) === String(id) || u.email.toLowerCase() === String(id).toLowerCase()
+    );
     if (!u) return null;
     const { passwordHash, ...safe } = u;
     return safe;
@@ -323,10 +386,21 @@ export const DataService = {
 
   async getUserWithPassword(id: string) {
     if (await checkMongoConnection()) {
-      return await User.findById(id).lean();
+      let u = null;
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        u = await User.findById(id).lean();
+      }
+      if (!u) {
+        u = await User.findOne({ $or: [{ _id: id as any }, { email: id }] }).lean();
+      }
+      return u;
     }
     const store = readStore();
-    return store.users.find((u) => String(u._id) === String(id)) || null;
+    return (
+      store.users.find(
+        (u) => String(u._id) === String(id) || u.email.toLowerCase() === String(id).toLowerCase()
+      ) || null
+    );
   },
 
   async createUser(data: any) {
@@ -349,13 +423,21 @@ export const DataService = {
   },
 
   async updateUser(id: string, data: any) {
+    const { _id, ...safeData } = data;
     if (await checkMongoConnection()) {
-      return await User.findByIdAndUpdate(id, data, { new: true }).select("-passwordHash").lean();
+      const filter = mongoose.Types.ObjectId.isValid(id)
+        ? { _id: id }
+        : { $or: [{ _id: id as any }, { email: id }] };
+      return await User.findOneAndUpdate(filter, { $set: safeData }, { new: true })
+        .select("-passwordHash")
+        .lean();
     }
     const store = readStore();
-    const idx = store.users.findIndex((u) => String(u._id) === String(id));
+    const idx = store.users.findIndex(
+      (u) => String(u._id) === String(id) || u.email.toLowerCase() === String(id).toLowerCase()
+    );
     if (idx !== -1) {
-      store.users[idx] = { ...store.users[idx], ...data, updatedAt: new Date().toISOString() };
+      store.users[idx] = { ...store.users[idx], ...safeData, updatedAt: new Date().toISOString() };
       writeStore(store);
       const { passwordHash, ...safe } = store.users[idx];
       return safe;
@@ -551,53 +633,60 @@ export const DataService = {
     data: any,
     user: { userId?: string; userName?: string } = { userName: "Admin" }
   ) {
+    // Explicit allowlist of fields that can be updated on a product document.
+    // Stock quantity (availableQuantity) is strictly excluded to prevent accidental resets during price/name/hsn updates.
+    const ALLOWED_FIELDS = [
+      "name",
+      "sku",
+      "barcode",
+      "categoryId",
+      "categoryName",
+      "description",
+      "uom",
+      "sellingPrice",
+      "purchasePrice",
+      "minStockAlert",
+      "gstRate",
+      "hsnCode",
+      "isActive",
+    ] as const;
+
+    const updatePayload: Record<string, any> = {};
+    for (const key of ALLOWED_FIELDS) {
+      if (data[key] !== undefined) {
+        updatePayload[key] = data[key];
+      }
+    }
+
+    if (updatePayload.sku) {
+      updatePayload.sku = String(updatePayload.sku).trim().toUpperCase();
+    }
+
     if (await checkMongoConnection()) {
       return await runInMongoTransaction(async (session) => {
         const current = await Product.findById(id).session(session || null);
         if (!current) return null;
 
-        if (data.sku) {
-          const cleanSku = String(data.sku).trim().toUpperCase();
+        if (updatePayload.sku && updatePayload.sku !== current.sku) {
           const conflict = await Product.findOne({
-            sku: cleanSku,
+            sku: updatePayload.sku,
             _id: { $ne: current._id },
             isDeleted: false,
           }).session(session || null);
           if (conflict) {
-            throw new Error(`Another active product already uses SKU "${cleanSku}".`);
+            throw new Error(`Another active product already uses SKU "${updatePayload.sku}".`);
           }
-          data.sku = cleanSku;
         }
 
-        const prevQty = Number(current.availableQuantity || 0);
-        const hasQtyUpdate = data.availableQuantity !== undefined;
-        const nextQty = hasQtyUpdate ? Math.max(0, Number(data.availableQuantity)) : prevQty;
+        // Apply ONLY allowlisted fields via field-specific partial update ($set).
+        // Stock quantity (availableQuantity) is strictly preserved and untouched!
+        const updated = await Product.findByIdAndUpdate(
+          id,
+          { $set: updatePayload },
+          { new: true, runValidators: true }
+        ).session(session || null);
 
-        Object.assign(current, data, { availableQuantity: nextQty });
-        await current.save({ session });
-
-        if (hasQtyUpdate && nextQty !== prevQty) {
-          await StockMovement.create(
-            [
-              {
-                productId: current._id,
-                productName: current.name,
-                sku: current.sku,
-                type: "adjustment",
-                quantity: nextQty - prevQty,
-                previousQuantity: prevQty,
-                newQuantity: nextQty,
-                referenceType: "adjustment",
-                reason: "Direct stock quantity update from Product Management",
-                unitCost: current.purchasePrice,
-                performedBy: user,
-              },
-            ],
-            { session }
-          );
-        }
-
-        return current.toObject();
+        return updated ? updated.toObject() : null;
       });
     }
 
@@ -606,45 +695,22 @@ export const DataService = {
     if (idx === -1) return null;
 
     const current = store.products[idx];
-    if (data.sku) {
-      const cleanSku = String(data.sku).trim().toUpperCase();
+    if (updatePayload.sku && updatePayload.sku !== current.sku) {
       const conflict = store.products.find(
-        (p, i) => i !== idx && !p.isDeleted && p.sku.toUpperCase() === cleanSku
+        (p, i) => i !== idx && !p.isDeleted && p.sku.toUpperCase() === updatePayload.sku
       );
       if (conflict) {
-        throw new Error(`Another active product already uses SKU "${cleanSku}".`);
+        throw new Error(`Another active product already uses SKU "${updatePayload.sku}".`);
       }
-      data.sku = cleanSku;
     }
 
-    const prevQty = Number(current.availableQuantity || 0);
-    const hasQtyUpdate = data.availableQuantity !== undefined;
-    const nextQty = hasQtyUpdate ? Math.max(0, Number(data.availableQuantity)) : prevQty;
-
+    // Preserve existing stock and IDs strictly
     store.products[idx] = {
       ...current,
-      ...data,
-      availableQuantity: nextQty,
+      ...updatePayload,
+      availableQuantity: current.availableQuantity,
       updatedAt: new Date().toISOString(),
     };
-
-    if (hasQtyUpdate && nextQty !== prevQty) {
-      store.stockMovements.unshift({
-        _id: uid("mov"),
-        productId: current._id,
-        productName: store.products[idx].name,
-        sku: store.products[idx].sku,
-        type: "adjustment",
-        quantity: nextQty - prevQty,
-        previousQuantity: prevQty,
-        newQuantity: nextQty,
-        referenceType: "adjustment",
-        reason: "Direct stock quantity update from Product Management",
-        unitCost: store.products[idx].purchasePrice,
-        performedBy: user,
-        createdAt: new Date().toISOString(),
-      });
-    }
 
     writeStore(store);
     return store.products[idx];

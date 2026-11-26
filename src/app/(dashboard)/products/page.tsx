@@ -169,17 +169,23 @@ export default function ProductsPage() {
       const url = isEditOpen && selectedProduct ? `/api/products/${selectedProduct._id}` : "/api/products";
       const method = isEditOpen ? "PUT" : "POST";
 
+      const payload: Record<string, any> = {
+        ...formData,
+        sellingPrice: Number(formData.sellingPrice),
+        purchasePrice: Number(formData.purchasePrice),
+        minStockAlert: Number(formData.minStockAlert),
+        gstRate: Number(formData.gstRate),
+      };
+      if (!isEditOpen) {
+        payload.availableQuantity = Number(formData.availableQuantity || 0);
+      } else {
+        delete payload.availableQuantity;
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          sellingPrice: Number(formData.sellingPrice),
-          purchasePrice: Number(formData.purchasePrice),
-          availableQuantity: Number(formData.availableQuantity),
-          minStockAlert: Number(formData.minStockAlert),
-          gstRate: Number(formData.gstRate),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save product");
@@ -698,18 +704,24 @@ export default function ProductsPage() {
 
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Available Quantity *
+                    Available Quantity {isEditOpen ? "(Managed via Inventory)" : "*"}
                   </label>
                   <input
                     type="number"
                     min="0"
-                    required
+                    required={!isEditOpen}
+                    disabled={isEditOpen}
                     value={formData.availableQuantity}
                     onChange={(e) =>
                       setFormData({ ...formData, availableQuantity: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono text-slate-900 focus:outline-none focus:border-emerald-500"
+                    className={`w-full ${isEditOpen ? "bg-slate-100 text-slate-500 cursor-not-allowed" : "bg-slate-50 text-slate-900"} border border-slate-300 rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-emerald-500`}
                   />
+                  {isEditOpen && (
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      To adjust stock, use the dedicated Inventory Stock Adjustment tool.
+                    </p>
+                  )}
                 </div>
 
                 <div>

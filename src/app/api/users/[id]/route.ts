@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DataService } from "@/lib/db-store";
-import { getCurrentUser, hashPassword } from "@/lib/auth";
+import { getCurrentUser, hashPassword, createSessionToken, setSessionCookie } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
 
 export async function PUT(
@@ -28,6 +28,17 @@ export async function PUT(
     const updated = await DataService.updateUser(id, updatePayload);
     if (!updated) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // If the logged-in admin updated their own account, refresh their active session cookie
+    if (currentUser.userId === id || currentUser.email === updated.email) {
+      const updatedSession = {
+        ...currentUser,
+        name: updated.name || currentUser.name,
+        role: updated.role || currentUser.role,
+      };
+      const token = await createSessionToken(updatedSession);
+      await setSessionCookie(token);
     }
 
     await recordAuditLog({

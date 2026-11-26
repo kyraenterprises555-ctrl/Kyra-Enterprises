@@ -33,7 +33,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     mongoState.connecting = mongoose.connect(uri, {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: process.env.NODE_ENV === "production" ? 5000 : 2000,
       socketTimeoutMS: 45000,
     });
   }

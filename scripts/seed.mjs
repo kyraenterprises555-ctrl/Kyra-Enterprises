@@ -61,11 +61,11 @@ async function seed() {
 
     await userColl.insertMany([
       {
-        name: "Rajesh Sharma (Admin)",
+        name: "Vivek Kr Jha",
         email: "admin@kyra.com",
         passwordHash: adminPasswordHash,
         role: "admin",
-        phone: "+91 98112 34567",
+        phone: "+91 7393931555",
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -307,7 +307,7 @@ async function seed() {
         unitCost: prod.purchasePrice,
         performedBy: {
           userId: "admin_seed",
-          userName: "Rajesh Sharma (Admin)",
+          userName: "Vivek Kr Jha",
         },
         createdAt: new Date(),
       };

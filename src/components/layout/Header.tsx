@@ -71,9 +71,28 @@ export function Header({
     } catch {}
   };
 
+  const syncProfile = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.success && data.user?.name) {
+        setUser((prev) => ({
+          ...prev,
+          name: data.user.name,
+          email: data.user.email || prev.email,
+          role: data.user.role || prev.role,
+        }));
+        setProfileName(data.user.name);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
+    setUser(initialUser);
     loadNotifications();
-  }, []);
+    syncProfile();
+  }, [initialUser]);
 
   const markAllRead = async () => {
     try {

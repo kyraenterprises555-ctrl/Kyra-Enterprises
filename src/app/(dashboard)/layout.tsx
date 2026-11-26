@@ -26,8 +26,22 @@ export default async function DashboardLayout({
     }
   } catch {}
 
+  // Always fetch live user details from persistent storage to guarantee the current saved admin name is displayed
+  let liveUser = user;
+  try {
+    const dbUser = await DataService.getUserById(user.userId);
+    if (dbUser) {
+      liveUser = {
+        userId: user.userId,
+        name: dbUser.name || user.name,
+        email: dbUser.email || user.email,
+        role: dbUser.role || user.role,
+      };
+    }
+  } catch {}
+
   return (
-    <DashboardShell user={user} businessName={businessName} logoUrl={logoUrl}>
+    <DashboardShell user={liveUser} businessName={businessName} logoUrl={logoUrl}>
       {children}
     </DashboardShell>
   );
